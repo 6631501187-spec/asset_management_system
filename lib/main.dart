@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'LecturerDashboardPage.dart';
+import 'package:asset_management_system/lecturer_dashboard_page.dart';
+
 void main() => runApp(const AssetBorrowingApp());
 
 class AssetBorrowingApp extends StatelessWidget {

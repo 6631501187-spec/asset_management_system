@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'lecturer_history_page.dart';
 
 class LecturerDashboardPage extends StatelessWidget {
   const LecturerDashboardPage({super.key});
@@ -54,32 +55,40 @@ class LecturerDashboardPage extends StatelessWidget {
             SizedBox(height: 20),
             Text(
               'Today',
-              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             SizedBox(height: 8),
             _AssetCard(
               name: 'Canon EOS R10',
               type: 'Camera',
               status: 'Available',
-              image: 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
+              image:
+                  'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
             ),
             _AssetCard(
               name: 'Sony A7C',
               type: 'Camera',
               status: 'Borrowed',
-              image: 'https://www.bigcamera.co.th/media/catalog/product/cache/69a3da6bcd95df779892f4b24fa6a6f7/s/o/sony-a7c_1.png',
+              image:
+                  'https://www.bigcamera.co.th/media/catalog/product/cache/69a3da6bcd95df779892f4b24fa6a6f7/s/o/sony-a7c_1.png',
             ),
             _AssetCard(
               name: 'iPad Air 5',
               type: 'Tablet',
               status: 'Disabled',
-              image: 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
+              image:
+                  'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
             ),
             _AssetCard(
               name: 'ASUS TUF F15',
               type: 'Laptop',
               status: 'Available',
-              image: 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg'
+              image:
+                  'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
             ),
           ],
         ),
@@ -102,15 +111,38 @@ class _LecturerDrawer extends StatelessWidget {
             const SizedBox(height: 20),
             const CircleAvatar(radius: 48, child: Icon(Icons.person, size: 40)),
             const SizedBox(height: 8),
-            const Text('Username', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            const Text(
+              'Username',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 16),
             const Divider(color: Colors.white54, thickness: 0.5),
             _drawerItem(Icons.edit, 'Edit profile', onTap: () {}),
-            _drawerItem(Icons.home_outlined, 'Home', onTap: () {
-              Navigator.pop(context);
-            }),
+            _drawerItem(
+              Icons.home_outlined,
+              'Home',
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
             _drawerItem(Icons.inbox, 'Check requests', onTap: () {}),
-            _drawerItem(Icons.history, 'History', onTap: () {}),
+            _drawerItem(
+              Icons.history,
+              'History',
+              onTap: () {
+                Navigator.pop(context); // ปิด Drawer ก่อน
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LecturerHistoryPage(),
+                  ),
+                );
+              },
+            ),
+
             const Spacer(),
             const Divider(color: Colors.white54, thickness: 0.5),
             _drawerItem(Icons.logout, 'Logout', onTap: () {}),
@@ -124,7 +156,10 @@ class _LecturerDrawer extends StatelessWidget {
   ListTile _drawerItem(IconData icon, String label, {VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
-      title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      title: Text(
+        label,
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
       onTap: onTap,
     );
   }
@@ -163,11 +198,17 @@ class _KpiRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: const [
-        Expanded(child: _KpiCard(title: 'Available', count: 8, color: Colors.green)),
+        Expanded(
+          child: _KpiCard(title: 'Available', count: 8, color: Colors.green),
+        ),
         SizedBox(width: 8),
-        Expanded(child: _KpiCard(title: 'Borrowed', count: 8, color: Colors.orange)),
+        Expanded(
+          child: _KpiCard(title: 'Borrowed', count: 8, color: Colors.orange),
+        ),
         SizedBox(width: 8),
-        Expanded(child: _KpiCard(title: 'Disabled', count: 2, color: Colors.grey)),
+        Expanded(
+          child: _KpiCard(title: 'Disabled', count: 2, color: Colors.grey),
+        ),
       ],
     );
   }
@@ -177,7 +218,11 @@ class _KpiCard extends StatelessWidget {
   final String title;
   final int count;
   final Color color;
-  const _KpiCard({required this.title, required this.count, required this.color});
+  const _KpiCard({
+    required this.title,
+    required this.count,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,8 +230,12 @@ class _KpiCard extends StatelessWidget {
       color: color.withOpacity(0.15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), // ลด padding
-        child: FittedBox( // ✅ บีบให้พอดีพื้นที่
+        padding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 8,
+        ), // ลด padding
+        child: FittedBox(
+          // ✅ บีบให้พอดีพื้นที่
           fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -195,19 +244,24 @@ class _KpiCard extends StatelessWidget {
                 title == 'Available'
                     ? Icons.check_circle
                     : title == 'Borrowed'
-                        ? Icons.access_time
-                        : Icons.remove_circle,
+                    ? Icons.access_time
+                    : Icons.remove_circle,
                 color: color,
                 size: 18, // ลดขนาด
               ),
               const SizedBox(width: 6),
-              Text(title,
-                  style:
-                      TextStyle(color: color, fontWeight: FontWeight.w600)),
+              Text(
+                title,
+                style: TextStyle(color: color, fontWeight: FontWeight.w600),
+              ),
               const SizedBox(width: 6),
-              Text('$count',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold)),
+              Text(
+                '$count',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ],
           ),
         ),
@@ -253,13 +307,30 @@ class _AssetCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
-                  Text('Type: $type', style: const TextStyle(color: Colors.black54)),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    'Type: $type',
+                    style: const TextStyle(color: Colors.black54),
+                  ),
                   Row(
                     children: [
-                      const Text('Status: ', style: TextStyle(color: Colors.black54)),
-                      Text(status,
-                          style: TextStyle(color: statusColor, fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Status: ',
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -268,7 +339,12 @@ class _AssetCard extends StatelessWidget {
             const SizedBox(width: 12),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(image, width: 60, height: 60, fit: BoxFit.cover),
+              child: Image.network(
+                image,
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
             ),
           ],
         ),
