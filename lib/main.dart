@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
+import 'package:asset_management_system/HomeStu.dart';
 void main() {
-  runApp(const MyApp());
+  runApp(const HomeStu());
 }
-
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -116,7 +115,7 @@ class _MyHomePageState extends State<MyHomePage> {
         onPressed: _incrementCounter,
         tooltip: 'Increment',
         child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ), 
     );
   }
 }
