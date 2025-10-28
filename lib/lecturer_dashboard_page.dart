@@ -1,13 +1,143 @@
 import 'package:flutter/material.dart';
-import 'lecturer_history_page.dart';
+import 'package:asset_management_system/lecturer_dashboard_page.dart' as dashboard;
+import 'package:asset_management_system/lecturer_requests_page.dart' as requests;
+import 'package:asset_management_system/lecturer_history_page.dart' as history;
 
+/* =====================================================
+   ✅ AppDrawer (ใช้ร่วมกันทุกหน้า) + Enum Route States
+   ===================================================== */
+enum AppRoutes { dashboard, requests, history }
+
+class AppDrawer extends StatelessWidget {
+  final AppRoutes currentRoute;
+  const AppDrawer({super.key, required this.currentRoute});
+
+  @override
+  Widget build(BuildContext context) {
+    ListTile _drawerItem({
+      required IconData icon,
+      required String label,
+      required bool selected,
+      required VoidCallback onTap,
+    }) {
+      return ListTile(
+        leading: Icon(icon, color: Colors.white),
+        title: Text(label, style: const TextStyle(color: Colors.white)),
+        selected: selected,
+        selectedTileColor: Colors.white10,
+        onTap: onTap,
+      );
+    }
+
+    return Drawer(
+      backgroundColor: const Color(0xFF607D8B),
+      child: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            const CircleAvatar(radius: 48, child: Icon(Icons.person, size: 40)),
+            const SizedBox(height: 8),
+            const Text(
+              'Username',
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: Colors.white54, thickness: 0.5),
+
+            // 🔹 Edit Profile
+            _drawerItem(
+              icon: Icons.edit,
+              label: 'Edit profile',
+              selected: false,
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: ไปหน้า edit profile
+              },
+            ),
+
+            // 🔹 Home (Dashboard)
+            _drawerItem(
+              icon: Icons.home_outlined,
+              label: 'Home',
+              selected: currentRoute == AppRoutes.dashboard,
+              onTap: () {
+                Navigator.pop(context);
+                if (currentRoute != AppRoutes.dashboard) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LecturerDashboardPage(),
+                    ),
+                  );
+                }
+              },
+            ),
+
+            // 🔹 Check Requests
+            _drawerItem(
+              icon: Icons.inbox,
+              label: 'Check requests',
+              selected: currentRoute == AppRoutes.requests,
+              onTap: () {
+                Navigator.pop(context);
+                if (currentRoute != AppRoutes.requests) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const requests.LecturerRequestsPage(),
+                    ),
+                  );
+                }
+              },
+            ),
+
+            // 🔹 History
+            _drawerItem(
+              icon: Icons.history,
+              label: 'History',
+              selected: currentRoute == AppRoutes.history,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const history.LecturerHistoryPage()),
+                );
+              },
+            ),
+
+            const Spacer(),
+            const Divider(color: Colors.white54, thickness: 0.5),
+
+            // 🔹 Logout
+            _drawerItem(
+              icon: Icons.logout,
+              label: 'Logout',
+              selected: false,
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: handle logout
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/* =====================================================
+   ✅ Lecturer Dashboard Page
+   ===================================================== */
 class LecturerDashboardPage extends StatelessWidget {
   const LecturerDashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: const _LecturerDrawer(), // ✅ Sidebar
+      drawer: const AppDrawer(currentRoute: AppRoutes.dashboard),
       backgroundColor: const Color(0xFF0E2430),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -41,8 +171,7 @@ class LecturerDashboardPage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
             colors: [Color(0xFF0E2430), Color(0xFF143A4A), Color(0xFF1E5B74)],
           ),
         ),
@@ -97,75 +226,9 @@ class LecturerDashboardPage extends StatelessWidget {
   }
 }
 
-/* ---------------- Sidebar ---------------- */
-class _LecturerDrawer extends StatelessWidget {
-  const _LecturerDrawer();
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      backgroundColor: const Color(0xFF607D8B),
-      child: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            const CircleAvatar(radius: 48, child: Icon(Icons.person, size: 40)),
-            const SizedBox(height: 8),
-            const Text(
-              'Username',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(color: Colors.white54, thickness: 0.5),
-            _drawerItem(Icons.edit, 'Edit profile', onTap: () {}),
-            _drawerItem(
-              Icons.home_outlined,
-              'Home',
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            _drawerItem(Icons.inbox, 'Check requests', onTap: () {}),
-            _drawerItem(
-              Icons.history,
-              'History',
-              onTap: () {
-                Navigator.pop(context); // ปิด Drawer ก่อน
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LecturerHistoryPage(),
-                  ),
-                );
-              },
-            ),
-
-            const Spacer(),
-            const Divider(color: Colors.white54, thickness: 0.5),
-            _drawerItem(Icons.logout, 'Logout', onTap: () {}),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  ListTile _drawerItem(IconData icon, String label, {VoidCallback? onTap}) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.white),
-      title: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
-      ),
-      onTap: onTap,
-    );
-  }
-}
-
-/* ---------------- Search Bar ---------------- */
+/* =====================================================
+   ✅ Search Bar
+   ===================================================== */
 class _SearchBar extends StatelessWidget {
   const _SearchBar();
 
@@ -190,7 +253,9 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-/* ---------------- KPI Row ---------------- */
+/* =====================================================
+   ✅ KPI Row
+   ===================================================== */
 class _KpiRow extends StatelessWidget {
   const _KpiRow();
 
@@ -230,12 +295,8 @@ class _KpiCard extends StatelessWidget {
       color: color.withOpacity(0.15),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 8,
-          vertical: 8,
-        ), // ลด padding
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: FittedBox(
-          // ✅ บีบให้พอดีพื้นที่
           fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -244,10 +305,10 @@ class _KpiCard extends StatelessWidget {
                 title == 'Available'
                     ? Icons.check_circle
                     : title == 'Borrowed'
-                    ? Icons.access_time
-                    : Icons.remove_circle,
+                        ? Icons.access_time
+                        : Icons.remove_circle,
                 color: color,
-                size: 18, // ลดขนาด
+                size: 18,
               ),
               const SizedBox(width: 6),
               Text(
@@ -258,9 +319,7 @@ class _KpiCard extends StatelessWidget {
               Text(
                 '$count',
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -270,7 +329,9 @@ class _KpiCard extends StatelessWidget {
   }
 }
 
-/* ---------------- Asset Card ---------------- */
+/* =====================================================
+   ✅ Asset Card
+   ===================================================== */
 class _AssetCard extends StatelessWidget {
   final String name;
   final String type;
@@ -307,30 +368,19 @@ class _AssetCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    'Type: $type',
-                    style: const TextStyle(color: Colors.black54),
-                  ),
+                  Text(name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text('Type: $type',
+                      style: const TextStyle(color: Colors.black54)),
                   Row(
                     children: [
-                      const Text(
-                        'Status: ',
-                        style: TextStyle(color: Colors.black54),
-                      ),
-                      Text(
-                        status,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      const Text('Status: ',
+                          style: TextStyle(color: Colors.black54)),
+                      Text(status,
+                          style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ],
@@ -344,6 +394,8 @@ class _AssetCard extends StatelessWidget {
                 width: 60,
                 height: 60,
                 fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.broken_image, size: 40),
               ),
             ),
           ],
