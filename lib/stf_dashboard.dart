@@ -19,6 +19,14 @@ class StaffDashboardPage extends StatefulWidget {
 
 class _StaffDashboardPageState extends State<StaffDashboardPage> {
   String? selectedStatus; // null means show all
+  String _searchQuery = ''; // Track search query
+  String _selectedFilter = 'All'; // Track selected filter
+  
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
 
   final List<Map<String, String>> allAssets = const [
     {
@@ -87,10 +95,29 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
   ];
 
   List<Map<String, String>> get filteredAssets {
-    if (selectedStatus == null) {
-      return allAssets;
+    List<Map<String, String>> filtered = allAssets;
+    
+    // Apply status filter
+    if (selectedStatus != null) {
+      filtered = filtered.where((asset) => asset['status'] == selectedStatus).toList();
     }
-    return allAssets.where((asset) => asset['status'] == selectedStatus).toList();
+    
+    // Apply category filter
+    if (_selectedFilter != 'All') {
+      filtered = filtered.where((asset) => asset['type'] == _selectedFilter).toList();
+    }
+    
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final searchTerm = _searchQuery.toLowerCase();
+      filtered = filtered.where((asset) => 
+        asset['name']!.toLowerCase().contains(searchTerm) ||
+        asset['type']!.toLowerCase().contains(searchTerm) ||
+        asset['assetId']!.toLowerCase().contains(searchTerm)
+      ).toList();
+    }
+    
+    return filtered;
   }
 
   int get availableCount => allAssets.where((a) => a['status'] == 'Available').length;
@@ -196,8 +223,8 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: 64,
-                        height: 64,
+                        width: 100,
+                        height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: const Color(0xFF283C45),
@@ -323,9 +350,16 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _StaffSearchBar(),
+                    _StaffSearchBar(onSearchChanged: _onSearchChanged),
                     const SizedBox(height: 12),
-                    const _StaffFilterChips(),
+                    _StaffFilterChips(
+                      selectedFilter: _selectedFilter,
+                      onFilterChanged: (filter) {
+                        setState(() {
+                          _selectedFilter = filter;
+                        });
+                      },
+                    ),
                     const SizedBox(height: 12),
                     _KpiRow(
                       availableCount: availableCount,
@@ -603,6 +637,10 @@ class _StaffAssetCard extends StatelessWidget {
 
 // New: std_home-style search bar for staff
 class _StaffSearchBar extends StatefulWidget {
+  final Function(String) onSearchChanged;
+  
+  const _StaffSearchBar({required this.onSearchChanged});
+  
   @override
   State<_StaffSearchBar> createState() => _StaffSearchBarState();
 }
@@ -638,6 +676,7 @@ class _StaffSearchBarState extends State<_StaffSearchBar> {
                     _searchCtrl.clear();
                     _searchFocus.requestFocus();
                   });
+                  widget.onSearchChanged('');
                 },
               ),
         border: OutlineInputBorder(
@@ -646,25 +685,46 @@ class _StaffSearchBarState extends State<_StaffSearchBar> {
         ),
       ),
       style: const TextStyle(color: Colors.white),
-      onChanged: (_) => setState(() {}),
+      onChanged: (value) {
+        setState(() {});
+        widget.onSearchChanged(value);
+      },
     );
   }
 }
 
 // New: std_home-style filter chips for staff
 class _StaffFilterChips extends StatelessWidget {
-  const _StaffFilterChips();
+  final String selectedFilter;
+  final Function(String) onFilterChanged;
+  
+  const _StaffFilterChips({
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
 
   Widget _buildFilterChip(String label) {
+    final bool isSelected = selectedFilter == label;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B3358),
-          borderRadius: BorderRadius.circular(20),
+      child: GestureDetector(
+        onTap: () => onFilterChanged(label),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF6EAAD7) : const Color(0xFF1B3358),
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected ? Border.all(color: Colors.white, width: 1) : null,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Text(
+            label, 
+            style: TextStyle(
+              fontSize: 14, 
+              color: isSelected ? Colors.black : Colors.white,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            )
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Text(label, style: const TextStyle(fontSize: 14, color: Colors.white)),
       ),
     );
   }
@@ -675,10 +735,11 @@ class _StaffFilterChips extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          _buildFilterChip('Computer'),
-          _buildFilterChip('iPad'),
+          _buildFilterChip('All'),
           _buildFilterChip('Camera'),
-          _buildFilterChip('Desk'),
+          _buildFilterChip('Tablet'),
+          _buildFilterChip('Laptop'),
+          _buildFilterChip('Lens'),
         ],
       ),
     );

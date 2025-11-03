@@ -5,8 +5,14 @@ import 'lec_history.dart';
 import 'edit_profile.dart';
 import 'welcome.dart';
 
-class LecturerRequestsPage extends StatelessWidget {
+class LecturerRequestsPage extends StatefulWidget {
   const LecturerRequestsPage({super.key});
+
+  @override
+  State<LecturerRequestsPage> createState() => _LecturerRequestsPageState();
+}
+
+class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
 
   void _confirmLogout(BuildContext context) {
     showDialog<void>(
@@ -131,6 +137,112 @@ class LecturerRequestsPage extends StatelessWidget {
     });
   }
 
+  void _showDisapprovalDialog(BuildContext context) {
+    final TextEditingController reasonController = TextEditingController();
+    
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 360,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+            decoration: BoxDecoration(
+              color: const Color(0xFF456882),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.red, width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Reason for Disapproval',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFE6DDD6),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: reasonController,
+                  maxLines: 4,
+                  decoration: InputDecoration(
+                    hintText: 'Please enter the reason for disapproval...',
+                    hintStyle: const TextStyle(color: Colors.white60),
+                    filled: true,
+                    fillColor: const Color(0xFF1B3358),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                  style: const TextStyle(color: Colors.white),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          reasonController.dispose();
+                          Navigator.of(ctx).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B2F2F),
+                          foregroundColor: Colors.white,
+                          elevation: 6,
+                          shadowColor: Colors.black45,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          final reason = reasonController.text.trim();
+                          reasonController.dispose();
+                          Navigator.of(ctx).pop();
+                          
+                          if (reason.isNotEmpty) {
+                            _showResponseDialog(context, 'Request disapproved\nReason: $reason', Colors.red);
+                          } else {
+                            _showResponseDialog(context, 'Request disapproved\nNo reason provided', Colors.red);
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          elevation: 6,
+                          shadowColor: Colors.black45,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Disapprove'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final requests = _sampleRequests;
@@ -174,8 +286,8 @@ class LecturerRequestsPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 64,
-                      height: 64,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFF283C45),
@@ -288,7 +400,7 @@ class LecturerRequestsPage extends StatelessWidget {
                     return _RequestCard(
                       record: req,
                       onApprove: () => _showResponseDialog(context, 'Request approved', const Color(0xFF47FF22)),
-                      onDisapprove: () => _showResponseDialog(context, 'Request disapproved', Colors.red),
+                      onDisapprove: () => _showDisapprovalDialog(context),
                     );
                   },
                 ),

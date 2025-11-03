@@ -47,6 +47,94 @@ class _RegisterState extends State<Register> {
     super.dispose();
   }
 
+  void _register() {
+    String name = _nameCtrl.text.trim();
+    String id = _idCtrl.text.trim();
+    String password = _passCtrl.text.trim();
+    String rePassword = _rePassCtrl.text.trim();
+
+    if (id == "6631501104" || id == "6631501187" || id == "6631501121") {
+      setState(() {
+        _errorMsg = "Existing user or password dont match";
+      });
+    } else if (password != rePassword) {
+      setState(() {
+        _errorMsg = "Existing user or password dont match";
+      });
+    } else if (name.isNotEmpty && id.isNotEmpty && password.isNotEmpty) {
+      _showSuccessDialog(() {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => StdHome()),
+        );
+      });
+    } else {
+      setState(() {
+        _errorMsg = "Please fill in all fields";
+      });
+    }
+  }
+
+  void _showSuccessDialog(VoidCallback onComplete) async {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      barrierDismissible: false, // Prevent manual dismissal
+      builder: (dialogCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        child: Container(
+          width: 300,
+          height: 200,
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Color(0xFF456882),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: Color(0xFF47FF22),
+              width: 2,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.check_circle_outline_rounded,
+                color: Color(0xFF47FF22),
+                size: 40,
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Registered',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                'Successfully!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    
+    // Auto-close after 2 seconds
+    Future.delayed(Duration(seconds: 2), () {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the dialog
+        onComplete(); // Execute the callback (navigation)
+      }
+    });
+  }
+
   InputDecoration _fieldDecoration({String? hint}) {
     return InputDecoration(
       hintText: hint,
@@ -257,89 +345,8 @@ class _RegisterState extends State<Register> {
                               width: 140,
                               height: 44,
                               child: ElevatedButton(
-                                onPressed: () async {
-                                  // Validate all fields when Register is clicked
-                                  setState(() {
-                                    _fieldErrors = {
-                                      'name': _nameCtrl.text.isEmpty ? 'This field must be filled' : null,
-                                      'id': _idCtrl.text.isEmpty ? 'This field must be filled' : null,
-                                      'password': _passCtrl.text.isEmpty ? 'This field must be filled' : null,
-                                      'rePassword': _rePassCtrl.text.isEmpty ? 'This field must be filled' : null,
-                                    };
-                                  });
-
-                                  // Check if all fields are valid and passwords match
-                                  bool isValid = !_fieldErrors.values.any((error) => error != null) && _errorMsg == null;
-
-                                  if (isValid) {
-                                    // Show success dialog and navigate
-                                    await showDialog(
-                                      context: context,
-                                      barrierColor: Colors.black.withOpacity(0.5),
-                                      barrierDismissible: true,
-                                      builder: (dialogCtx) => GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
-                                        onTap: () {
-                                          // tapping anywhere (outside or on the overlay) will close dialog
-                                          Navigator.of(dialogCtx).pop();
-                                        },
-                                        child: Dialog(
-                                          backgroundColor: Colors.transparent,
-                                          elevation: 0,
-                                          child: GestureDetector(
-                                            // also allow tapping the dialog content to dismiss
-                                            onTap: () => Navigator.of(dialogCtx).pop(),
-                                            child: Container(
-                                              width: 300,
-                                              height: 200,
-                                              padding: EdgeInsets.all(20),
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFF456882),
-                                                borderRadius: BorderRadius.circular(30),
-                                                border: Border.all(
-                                                  color: Color(0xFF47FF22),
-                                                  width: 2,
-                                                ),
-                                              ),
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  Icon(
-                                                    Icons.check_circle_outline_rounded,
-                                                    color: Color(0xFF47FF22),
-                                                    size: 40,
-                                                  ),
-                                                  SizedBox(height: 16),
-                                                  Text(
-                                                    'Registered',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 24,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                  Text(
-                                                    'Successfully!',
-                                                    style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 24,
-                                                      fontWeight: FontWeight.w500,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    );
-
-                                    // navigate only after the dialog is dismissed
-                                    if (!mounted) return;
-                                    Navigator.of(context).pushReplacement(
-                                      MaterialPageRoute(builder: (_) => StdHome()),
-                                    );
-                                  }
+                                onPressed: () {
+                                  _register();
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color(0xFF6EAAD7),

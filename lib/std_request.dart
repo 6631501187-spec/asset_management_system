@@ -8,61 +8,6 @@ class StdRequest extends StatefulWidget {
 }
 
 class _StdRequestState extends State<StdRequest> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _requestDateController = TextEditingController();
-  final TextEditingController _returnDateController = TextEditingController();
-
-  DateTime? _requestDate;
-  DateTime? _returnDate;
-
-  Future<void> _selectDate(
-      BuildContext context, TextEditingController controller,
-      {required bool isRequest}) async {
-    final DateTime now = DateTime.now();
-    final DateTime first = isRequest ? DateTime(now.year, now.month, now.day) : (_requestDate ?? DateTime(now.year, now.month, now.day));
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: (isRequest ? (_requestDate ?? first) : (_returnDate ?? first)),
-      firstDate: first,
-      lastDate: DateTime(2100),
-    );
-    if (picked != null) {
-      setState(() {
-        final formatted = "${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}";
-        controller.text = formatted;
-        if (isRequest) {
-          _requestDate = DateTime(picked.year, picked.month, picked.day);
-          // if return date exists but is before new request date, clear it
-          if (_returnDate != null && _returnDate!.isBefore(_requestDate!)) {
-            _returnDate = null;
-            _returnDateController.clear();
-          }
-        } else {
-          _returnDate = DateTime(picked.year, picked.month, picked.day);
-        }
-      });
-    }
-  }
-
-  DateTime? _parseControllerDate(String text) {
-    try {
-      final parts = text.split('/');
-      if (parts.length != 3) return null;
-      final month = int.parse(parts[0]);
-      final day = int.parse(parts[1]);
-      final year = int.parse(parts[2]);
-      return DateTime(year, month, day);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  @override
-  void dispose() {
-    _requestDateController.dispose();
-    _returnDateController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,9 +35,7 @@ class _StdRequestState extends State<StdRequest> {
          child: Center(
            child: SingleChildScrollView(
              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-             child: Form(
-               key: _formKey,
-               child: Container(
+             child: Container(
                  width: 320,
                  padding: const EdgeInsets.all(16),
                  decoration: BoxDecoration(
@@ -128,97 +71,63 @@ class _StdRequestState extends State<StdRequest> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Mouse',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Electronics',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    ),
                     const SizedBox(height: 16),
 
-                    // Request date
-                    TextFormField(
-                      controller: _requestDateController,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Request date',
-                        hintText: 'mm/dd/yyyy',
-                        filled: true,
-                        fillColor: const Color(0xFF0C192C),
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        hintStyle: const TextStyle(color: Colors.white54),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today, color: Colors.white70),
-                          onPressed: () =>
-                              _selectDate(context, _requestDateController, isRequest: true),
-                        ),
+                    // Asset Information
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0C192C),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white24, width: 1),
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a request date';
-                        }
-                        final parsed = _parseControllerDate(value);
-                        if (parsed == null) return 'Invalid date';
-                        final today = DateTime.now();
-                        final todayDate = DateTime(today.year, today.month, today.day);
-                        if (parsed.isBefore(todayDate)) {
-                          return 'Request date cannot be in the past';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Return date
-                    TextFormField(
-                      controller: _returnDateController,
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: 'Return date',
-                        hintText: 'mm/dd/yyyy',
-                        filled: true,
-                        fillColor: const Color(0xFF0C192C),
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        hintStyle: const TextStyle(color: Colors.white54),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.calendar_today, color: Colors.white70),
-                          onPressed: () =>
-                              _selectDate(context, _returnDateController, isRequest: false),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Asset Information',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Asset ID: MSE-001',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Name: Logitech MX Master 3S',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Type: Electronics',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'Wireless mouse with ergonomic design, suitable for productivity work. Includes USB-C charging cable and unifying receiver.',
+                            style: TextStyle(
+                              color: Colors.white60,
+                              fontSize: 12,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
                       ),
-                      style: const TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a return date';
-                        }
-                        final parsedReturn = _parseControllerDate(value);
-                        if (parsedReturn == null) return 'Invalid date';
-                        final parsedRequest = _requestDate ?? _parseControllerDate(_requestDateController.text);
-                        if (parsedRequest == null) return 'Select request date first';
-                        if (parsedReturn.isBefore(parsedRequest)) {
-                          return 'Return date cannot be earlier than request date';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 20),
 
@@ -258,18 +167,16 @@ class _StdRequestState extends State<StdRequest> {
                               shadowColor: Colors.black45,
                             ),
                             onPressed: () {
-                              // validate form and date logic
-                              if (_formKey.currentState!.validate()) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Request submitted successfully!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                Future.delayed(const Duration(seconds: 1), () {
-                                  Navigator.pop(context);
-                                });
-                              }
+                              // Submit the request directly since no validation needed
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Request submitted successfully!'),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                              Future.delayed(const Duration(seconds: 1), () {
+                                Navigator.pop(context);
+                              });
                             },
                             child: const Text('Request'),
                           ),
@@ -282,7 +189,6 @@ class _StdRequestState extends State<StdRequest> {
             ),
           ),
         ),
-      ),
       ),
     );
   }

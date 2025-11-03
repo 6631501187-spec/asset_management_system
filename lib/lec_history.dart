@@ -129,8 +129,8 @@ class LecturerHistoryPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 64,
-                      height: 64,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: const Color(0xFF283C45),
