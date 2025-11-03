@@ -16,6 +16,7 @@ class AddAssetPage extends StatefulWidget {
 class _AddAssetPageState extends State<AddAssetPage> {
   
   final _nameCtrl = TextEditingController(text: 'Mac Book Air 008');
+  final _assetInfoCtrl = TextEditingController();
   String _type = 'Laptop';
   String _status = 'Available';
 
@@ -25,6 +26,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _assetInfoCtrl.dispose();
     super.dispose();
   }
 
@@ -311,16 +313,6 @@ class _AddAssetPageState extends State<AddAssetPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Add New Asset',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF6EC1E4),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
                       
                       // Image placeholder
                       Center(
@@ -424,6 +416,27 @@ class _AddAssetPageState extends State<AddAssetPage> {
                             .toList(),
                         onChanged: (v) => setState(() => _status = v!),
                         icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Asset Info
+                      TextField(
+                        controller: _assetInfoCtrl,
+                        maxLines: 2,
+                        decoration: InputDecoration(
+                          labelText: 'Asset Information',
+                          hintText: 'Enter additional information about the asset (model, specifications, etc.)',
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          hintStyle: const TextStyle(color: Colors.white60, fontSize: 12),
+                          filled: true,
+                          fillColor: const Color(0xFF223A5E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          alignLabelWithHint: true,
+                        ),
+                        style: const TextStyle(color: Colors.white),
                       ),
                       const SizedBox(height: 24),
                       

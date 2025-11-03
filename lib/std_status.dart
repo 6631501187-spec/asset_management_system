@@ -5,8 +5,31 @@ import 'std_history.dart';
 import 'edit_profile.dart';
 import 'welcome.dart';
 
-class StdStatus extends StatelessWidget {
+class StdStatus extends StatefulWidget {
   const StdStatus({super.key});
+
+  @override
+  State<StdStatus> createState() => _StdStatusState();
+}
+
+class _StdStatusState extends State<StdStatus> {
+  // Sample data with different statuses
+  final List<Map<String, dynamic>> borrowedItems = [
+    {
+      'name': 'Gaming Mouse',
+      'status': 'pending',
+      'requestDate': '10/22/2025',
+      'returnDate': '12/22/2025',
+      'image': 'https://cdn.thewirecutter.com/wp-content/media/2023/01/gamingmouse-2048px-logitech-g502x-plus-top.jpg',
+    },
+    {
+      'name': 'iPad Air 5',
+      'status': 'borrowed',
+      'requestDate': '10/15/2025',
+      'returnDate': '12/15/2025',
+      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
+    },
+  ];
 
   void _confirmLogout(BuildContext context) {
     showDialog<void>(
@@ -184,7 +207,7 @@ class StdStatus extends StatelessWidget {
 
       // AppBar style same as StdHome (transparent, no shadow)
       appBar: AppBar(
-        title: const Text('Pending request'),
+        title: const Text('Request Status'),
         backgroundColor: const Color.fromARGB(255, 15, 22, 28),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -215,73 +238,213 @@ class StdStatus extends StatelessWidget {
               end: Alignment.bottomCenter,
             ),
           ),
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 400,
-                    width: 280, // fixed card width
-                    child: Card(
-                      color: const Color(0xFF1B3358),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+          child: borrowedItems.isEmpty
+              ? const Center(
+                  child: Text(
+                    'No borrowed items',
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: borrowedItems.length,
+                  itemBuilder: (context, index) {
+                    final item = borrowedItems[index];
+                    return _buildStatusCard(item);
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusCard(Map<String, dynamic> item) {
+    final String status = item['status'];
+    final Color statusColor = status == 'pending' ? Colors.amber : Colors.green;
+    final String statusText = status == 'pending' ? 'Pending...' : 'Borrowed';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: SizedBox(
+        width: 280, // fixed card width
+        child: Card(
+          color: const Color(0xFF1B3358),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 8,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    item['image'],
+                    fit: BoxFit.cover,
+                    height: 150,
+                    width: double.infinity, // fill the card width (280)
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 150,
+                      color: const Color(0xFF283C45),
+                      child: const Center(
+                        child: Icon(Icons.inventory_2, color: Colors.white30, size: 40),
                       ),
-                      elevation: 8,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                'https://via.placeholder.com/600x300.png?text=Item',
-                                fit: BoxFit.cover,
-                                height: 150,
-                                width: double.infinity, // fill the card width (280)
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  height: 150,
-                                  color: const Color(0xFF283C45),
-                                  child: const Center(
-                                    child: Icon(Icons.inventory_2, color: Colors.white30, size: 40),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              'Mouse',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                            const Text(
-                              'Pending...',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.amber,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text(
-                              'Request date: 10/22/2025',
-                              style: TextStyle(fontSize: 14, color: Colors.white70),
-                            ),
-                            const Text(
-                              'Return date: 12/22/2025',
-                              style: TextStyle(fontSize: 14, color: Colors.white70),
-                            ),
-                          ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  item['name'],
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Request date: ${item['requestDate']}',
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                ),
+                Text(
+                  'Return date: ${item['returnDate']}',
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
+                ),
+                // Conditional Return button for borrowed status
+                if (status == 'borrowed') ...[
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () => _showReturnConfirmation(item),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6EAAD7),
+                        foregroundColor: Colors.black,
+                        elevation: 4,
+                        shadowColor: Colors.black45,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      ),
+                      child: const Text(
+                        'Return',
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
                 ],
-              ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showReturnConfirmation(Map<String, dynamic> item) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 340,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+            decoration: BoxDecoration(
+              color: const Color(0xFF456882),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: const Color(0xFF47FF22), width: 2),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Return ${item['name']}?',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Color(0xFFE6DDD6),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Are you sure you want to return this item?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFE6DDD6),
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF8B2F2F),
+                          foregroundColor: Colors.white,
+                          elevation: 6,
+                          shadowColor: Colors.black45,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(ctx).pop();
+                          _returnItem(item);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF6EAAD7),
+                          foregroundColor: Colors.black,
+                          elevation: 6,
+                          shadowColor: Colors.black45,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Return'),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _returnItem(Map<String, dynamic> item) {
+    setState(() {
+      borrowedItems.removeWhere((element) => element['name'] == item['name']);
+    });
+    
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${item['name']} has been returned successfully'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

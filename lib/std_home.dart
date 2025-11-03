@@ -14,12 +14,82 @@ class StdHome extends StatefulWidget {
 }
 
 class _StdHomeState extends State<StdHome> {
-  // generic product image URL
-  static const String productUrl =
-      'https://cdn.thewirecutter.com/wp-content/media/2023/01/gamingmouse-2048px-logitech-g502x-plus-top.jpg';
-
   final TextEditingController _searchCtrl = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
+  String _selectedFilter = 'All'; // Track selected filter
+
+  // Sample asset data
+  final List<Map<String, String>> allAssets = const [
+    {
+      'name': 'Gaming Mouse',
+      'type': 'Computer',
+      'category': 'Computer',
+      'image': 'https://cdn.thewirecutter.com/wp-content/media/2023/01/gamingmouse-2048px-logitech-g502x-plus-top.jpg',
+    },
+    {
+      'name': 'iPad Air 5',
+      'type': 'iPad',
+      'category': 'iPad',
+      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
+    },
+    {
+      'name': 'Canon EOS R10',
+      'type': 'Camera',
+      'category': 'Camera',
+      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
+    },
+    {
+      'name': 'Office Desk',
+      'type': 'Desk',
+      'category': 'Desk',
+      'image': 'https://via.placeholder.com/300x200/1B3358/FFFFFF?text=Office+Desk',
+    },
+    {
+      'name': 'Wireless Keyboard',
+      'type': 'Computer',
+      'category': 'Computer',
+      'image': 'https://via.placeholder.com/300x200/1B3358/FFFFFF?text=Keyboard',
+    },
+    {
+      'name': 'iPad Pro 11',
+      'type': 'iPad',
+      'category': 'iPad',
+      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
+    },
+    {
+      'name': 'Sony A7C',
+      'type': 'Camera',
+      'category': 'Camera',
+      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/s/o/sony-a7c_1.png',
+    },
+    {
+      'name': 'Standing Desk',
+      'type': 'Desk',
+      'category': 'Desk',
+      'image': 'https://via.placeholder.com/300x200/1B3358/FFFFFF?text=Standing+Desk',
+    },
+  ];
+
+  // Filter assets based on search and category
+  List<Map<String, String>> get filteredAssets {
+    List<Map<String, String>> filtered = allAssets;
+    
+    // Apply category filter
+    if (_selectedFilter != 'All') {
+      filtered = filtered.where((asset) => asset['category'] == _selectedFilter).toList();
+    }
+    
+    // Apply search filter
+    if (_searchCtrl.text.isNotEmpty) {
+      final searchTerm = _searchCtrl.text.toLowerCase();
+      filtered = filtered.where((asset) => 
+        asset['name']!.toLowerCase().contains(searchTerm) ||
+        asset['type']!.toLowerCase().contains(searchTerm)
+      ).toList();
+    }
+    
+    return filtered;
+  }
 
   @override
   void dispose() {
@@ -109,15 +179,31 @@ class _StdHomeState extends State<StdHome> {
   }
 
   Widget _buildFilterChip(String label) {
+    final bool isSelected = _selectedFilter == label;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFF1B3358),
-          borderRadius: BorderRadius.circular(20),
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedFilter = label;
+          });
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF6EAAD7) : const Color(0xFF1B3358),
+            borderRadius: BorderRadius.circular(20),
+            border: isSelected ? Border.all(color: Colors.white, width: 1) : null,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Text(
+            label, 
+            style: TextStyle(
+              fontSize: 14, 
+              color: isSelected ? Colors.black : Colors.white,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            )
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Text(label, style: const TextStyle(fontSize: 14, color: Colors.white)),
       ),
     );
   }
@@ -302,6 +388,7 @@ class _StdHomeState extends State<StdHome> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
+                        _buildFilterChip('All'),
                         _buildFilterChip('Computer'),
                         _buildFilterChip('iPad'),
                         _buildFilterChip('Camera'),
@@ -313,72 +400,81 @@ class _StdHomeState extends State<StdHome> {
 
                   // Asset Cards Grid
                   Expanded(
-                    child: GridView.builder(
-                      itemCount: 6,
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const StdRequest(),
-                              ),
-                            );
-                          },
-                          child: Card(
-                            color: const Color(0xFF1B3358),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                    child: filteredAssets.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No assets found',
+                              style: TextStyle(color: Colors.white70, fontSize: 16),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(12)),
-                                    child: Image.network(
-                                      productUrl,
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          Container(
-                                        color: const Color(0xFF283C45),
-                                        child: const Center(
-                                          child: Icon(Icons.broken_image,
-                                              color: Colors.white30),
-                                        ),
-                                      ),
+                          )
+                        : GridView.builder(
+                            itemCount: filteredAssets.length,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: 12,
+                              childAspectRatio: 0.75,
+                            ),
+                            itemBuilder: (context, index) {
+                              final asset = filteredAssets[index];
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const StdRequest(),
                                     ),
+                                  );
+                                },
+                                child: Card(
+                                  color: const Color(0xFF1B3358),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: const [
-                                      Text('Mouse',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold)),
-                                      SizedBox(height: 4),
-                                      Text('Electronics',
-                                          style:
-                                              TextStyle(color: Colors.white70)),
+                                    children: [
+                                      Expanded(
+                                        child: ClipRRect(
+                                          borderRadius: const BorderRadius.vertical(
+                                              top: Radius.circular(12)),
+                                          child: Image.network(
+                                            asset['image']!,
+                                            fit: BoxFit.cover,
+                                            width: double.infinity,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                Container(
+                                              color: const Color(0xFF283C45),
+                                              child: const Center(
+                                                child: Icon(Icons.broken_image,
+                                                    color: Colors.white30),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.all(8),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(asset['name']!,
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white)),
+                                            const SizedBox(height: 4),
+                                            Text(asset['type']!,
+                                                style:
+                                                    const TextStyle(color: Colors.white70)),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

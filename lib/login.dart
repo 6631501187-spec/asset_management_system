@@ -144,7 +144,7 @@ class _LoginState extends State<Login> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          'Student ID / username',
+                          'Student ID',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 13,

@@ -15,6 +15,13 @@ class LecDashboard extends StatefulWidget {
 class _LecDashboardState extends State<LecDashboard> {
   // initialize the profile lists
   String? selectedStatus; // null means show all
+  String _searchQuery = ''; // Track search query
+  
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+    });
+  }
 
   final List<Map<String, String>> allAssets = const [
     {
@@ -86,10 +93,23 @@ class _LecDashboardState extends State<LecDashboard> {
   ];
 
   List<Map<String, String>> get filteredAssets {
-    if (selectedStatus == null) {
-      return allAssets;
+    List<Map<String, String>> filtered = allAssets;
+    
+    // Apply status filter
+    if (selectedStatus != null) {
+      filtered = filtered.where((asset) => asset['status'] == selectedStatus).toList();
     }
-    return allAssets.where((asset) => asset['status'] == selectedStatus).toList();
+    
+    // Apply search filter
+    if (_searchQuery.isNotEmpty) {
+      final searchTerm = _searchQuery.toLowerCase();
+      filtered = filtered.where((asset) => 
+        asset['name']!.toLowerCase().contains(searchTerm) ||
+        asset['type']!.toLowerCase().contains(searchTerm)
+      ).toList();
+    }
+    
+    return filtered;
   }
 
   int get availableCount => allAssets.where((a) => a['status'] == 'Available').length;
@@ -301,7 +321,7 @@ class _LecDashboardState extends State<LecDashboard> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _LecturerSearchBar(),
+                    _LecturerSearchBar(onSearchChanged: _onSearchChanged),
                   const SizedBox(height: 12),
                   _KpiRow(
                     availableCount: availableCount,
@@ -350,6 +370,10 @@ class _LecDashboardState extends State<LecDashboard> {
 
 /* ---------------- Search Bar (StdHome style, height 40) ---------------- */
 class _LecturerSearchBar extends StatefulWidget {
+  final Function(String) onSearchChanged;
+  
+  const _LecturerSearchBar({required this.onSearchChanged});
+  
   @override
   State<_LecturerSearchBar> createState() => _LecturerSearchBarState();
 }
@@ -387,6 +411,7 @@ class _LecturerSearchBarState extends State<_LecturerSearchBar> {
                       _searchCtrl.clear();
                       _searchFocus.requestFocus();
                     });
+                    widget.onSearchChanged('');
                   },
                 ),
           border: OutlineInputBorder(
@@ -396,7 +421,10 @@ class _LecturerSearchBarState extends State<_LecturerSearchBar> {
           contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
         ),
         style: const TextStyle(color: Colors.white),
-        onChanged: (_) => setState(() {}),
+        onChanged: (value) {
+          setState(() {});
+          widget.onSearchChanged(value);
+        },
       ),
     );
   }
