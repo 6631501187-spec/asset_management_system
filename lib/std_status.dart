@@ -29,6 +29,34 @@ class _StdStatusState extends State<StdStatus> {
       'returnDate': '12/15/2025',
       'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
     },
+    {
+      'name': 'Canon EOS R10',
+      'status': 'pending',
+      'requestDate': '10/20/2025',
+      'returnDate': '12/20/2025',
+      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
+    },
+    {
+      'name': 'MacBook Air M2',
+      'status': 'borrowed',
+      'requestDate': '10/18/2025',
+      'returnDate': '12/18/2025',
+      'image': 'https://media-cdn.bnn.in.th/442496/TH_MacBook_Air_13-inch_M2_Midnight_-1-square_medium.jpg',
+    },
+    {
+      'name': 'ASUS TUF F15',
+      'status': 'pending',
+      'requestDate': '10/25/2025',
+      'returnDate': '12/25/2025',
+      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
+    },
+    {
+      'name': 'Sony A7C',
+      'status': 'returned',
+      'requestDate': '10/10/2025',
+      'returnDate': '11/10/2025',
+      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/69a3da6bcd95df779892f4b24fa6a6f7/s/o/sony-a7c_1.png',
+    },
   ];
 
   void _confirmLogout(BuildContext context) {
@@ -245,13 +273,19 @@ class _StdStatusState extends State<StdStatus> {
                     style: TextStyle(color: Colors.white70, fontSize: 16),
                   ),
                 )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: borrowedItems.length,
-                  itemBuilder: (context, index) {
-                    final item = borrowedItems[index];
-                    return _buildStatusCard(item);
-                  },
+              : Center(
+                  child: SizedBox(
+                    height: 400,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: borrowedItems.length,
+                      itemBuilder: (context, index) {
+                        final item = borrowedItems[index];
+                        return _buildStatusCard(item);
+                      },
+                    ),
+                  ),
                 ),
         ),
       ),
@@ -260,13 +294,22 @@ class _StdStatusState extends State<StdStatus> {
 
   Widget _buildStatusCard(Map<String, dynamic> item) {
     final String status = item['status'];
-    final Color statusColor = status == 'pending' ? Colors.amber : Colors.green;
-    final String statusText = status == 'pending' ? 'Pending...' : 'Borrowed';
+    final Color statusColor = status == 'pending' 
+        ? Colors.amber 
+        : status == 'borrowed' 
+            ? Colors.green 
+            : Colors.blue;
+    final String statusText = status == 'pending' 
+        ? 'Pending...' 
+        : status == 'borrowed' 
+            ? 'Borrowed' 
+            : 'Returned';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(right: 20),
       child: SizedBox(
         width: 280, // fixed card width
+        height: 300, // fixed card height
         child: Card(
           color: const Color(0xFF1B3358),
           shape: RoundedRectangleBorder(
@@ -436,7 +479,11 @@ class _StdStatusState extends State<StdStatus> {
 
   void _returnItem(Map<String, dynamic> item) {
     setState(() {
-      borrowedItems.removeWhere((element) => element['name'] == item['name']);
+      // Find and update the status instead of removing the item
+      final index = borrowedItems.indexWhere((element) => element['name'] == item['name']);
+      if (index != -1) {
+        borrowedItems[index]['status'] = 'returned';
+      }
     });
     
     // Show success message
