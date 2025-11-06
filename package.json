@@ -1,0 +1,19 @@
+{
+  "name": "asset-management-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Asset Management System",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": ["express", "mysql", "api"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@node-rs/argon2": "^1.8.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "mysql2": "^3.11.5"
+  }
+}
