@@ -6,6 +6,7 @@ import 'stf_history.dart';
 import 'edit_profile.dart';
 import 'welcome.dart';
 import 'services/user_session.dart';
+import 'services/api_service.dart';
 
 class AddAssetPage extends StatefulWidget {
   const AddAssetPage({super.key});
@@ -18,12 +19,27 @@ class _AddAssetPageState extends State<AddAssetPage> {
   String? _currentUsername;
   String? _currentProfileImage;
   
-  final _nameCtrl = TextEditingController(text: 'Mac Book Air 008');
-  final _assetInfoCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _descriptionCtrl = TextEditingController();
+  final _imageUrlController = TextEditingController();
   String _type = 'Laptop';
   String _status = 'Available';
+  String _currentImageUrl = '';
+  bool _isSaving = false;
 
-  final _types = const ['Laptop', 'Desktop', 'Phone', 'Tablet', 'Other'];
+  final _types = const [
+    'Laptop',
+    'Mouse',
+    'Keyboard',
+    'Monitor',
+    'Camera',
+    'Tablet',
+    'Projector',
+    'Adapter',
+    'Storage',
+    'Headphones',
+    'Webcam'
+  ];
   final _statuses = const ['Available', 'Disabled'];
 
   @override
@@ -42,8 +58,108 @@ class _AddAssetPageState extends State<AddAssetPage> {
   @override
   void dispose() {
     _nameCtrl.dispose();
-    _assetInfoCtrl.dispose();
+    _descriptionCtrl.dispose();
+    _imageUrlController.dispose();
     super.dispose();
+  }
+
+  void _previewImage() {
+    if (_imageUrlController.text.trim().isNotEmpty) {
+      setState(() {
+        _currentImageUrl = _imageUrlController.text.trim();
+      });
+    } else {
+      setState(() {
+        _currentImageUrl = '';
+      });
+    }
+  }
+
+  Future<void> _handleConfirm() async {
+    if (_nameCtrl.text.trim().isEmpty || _descriptionCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Asset name and description must be filled'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final newAssetData = {
+        'asset_name': _nameCtrl.text.trim(),
+        'asset_type': _type,
+        'status': _status,
+        'description': _descriptionCtrl.text.trim(),
+        'image_src': _imageUrlController.text.trim().isEmpty 
+            ? null 
+            : _imageUrlController.text.trim(),
+      };
+
+      await ApiService.post('/assets', newAssetData);
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      _showSuccessDialog();
+    } catch (e) {
+      setState(() {
+        _isSaving = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add asset: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: const Color(0xFF2E4057),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(
+            color: Color.fromARGB(255, 141, 252, 89),
+            width: 2,
+          ),
+        ),
+        title: const Column(
+          children: [
+            Icon(Icons.check_circle, color: Colors.lightGreenAccent, size: 60),
+            SizedBox(height: 10),
+            Text(
+              'Asset Added Successfully!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    Future.delayed(const Duration(seconds: 1, milliseconds: 500), () {
+      if (mounted) {
+        Navigator.of(context).pop(); // Close dialog
+        Navigator.of(context).pop(); // Go back to dashboard
+      }
+    });
   }
 
   void _confirmLogout(BuildContext context) {
@@ -124,51 +240,6 @@ class _AddAssetPageState extends State<AddAssetPage> {
         );
       },
     );
-  }
-
-  void _handleConfirm() {
-    // Show success dialog
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: Container(
-            width: 340,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-            decoration: BoxDecoration(
-              color: const Color(0xFF456882),
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: const Color(0xFF47FF22), width: 2),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'Successfully added\na new asset',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFE6DDD6),
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    // Auto close dialog after 2 seconds and navigate back
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        Navigator.of(context).pop(); // Close dialog
-        Navigator.of(context).pop(); // Close add asset page
-      }
-    });
   }
 
   // Drawer matching stf_dashboard (same structure and colors)
@@ -336,8 +407,18 @@ class _AddAssetPageState extends State<AddAssetPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      
-                      // Image placeholder
+                      const Text(
+                        'Add Asset',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6EC1E4),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Asset Image Preview
                       Center(
                         child: Container(
                           width: 150,
@@ -345,52 +426,47 @@ class _AddAssetPageState extends State<AddAssetPage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF223A5E),
                             borderRadius: BorderRadius.circular(12),
+                            image: _currentImageUrl.isNotEmpty
+                                ? DecorationImage(
+                                    image: NetworkImage(_currentImageUrl),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
-                          child: const Icon(
-                            Icons.image,
-                            size: 60,
-                            color: Colors.white54,
-                          ),
+                          child: _currentImageUrl.isEmpty
+                              ? const Icon(
+                                  Icons.image,
+                                  size: 60,
+                                  color: Colors.white54,
+                                )
+                              : null,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 20),
                       
-                      // Add image button
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            _toast(context, 'Add image tapped');
-                          },
-                          child: const Text(
-                            'Add image',
-                            style: TextStyle(
-                              color: Color(0xFF6EC1E4),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Name
+                      // Asset Name TextField
                       TextField(
                         controller: _nameCtrl,
+                        style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Name',
+                          labelText: 'Asset Name',
                           labelStyle: const TextStyle(color: Colors.white70),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                           filled: true,
                           fillColor: const Color(0xFF223A5E),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.lightGreenAccent),
+                          ),
                         ),
-                        style: const TextStyle(color: Colors.white),
                       ),
                       const SizedBox(height: 16),
                       
-                      // Type
+                      // Type Dropdown
                       DropdownButtonFormField<String>(
                         value: _type,
                         decoration: InputDecoration(
@@ -401,6 +477,10 @@ class _AddAssetPageState extends State<AddAssetPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.lightGreenAccent),
                           ),
                         ),
                         dropdownColor: const Color(0xFF223A5E),
@@ -416,7 +496,7 @@ class _AddAssetPageState extends State<AddAssetPage> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Status
+                      // Status Dropdown
                       DropdownButtonFormField<String>(
                         value: _status,
                         decoration: InputDecoration(
@@ -427,6 +507,10 @@ class _AddAssetPageState extends State<AddAssetPage> {
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.lightGreenAccent),
                           ),
                         ),
                         dropdownColor: const Color(0xFF223A5E),
@@ -442,56 +526,118 @@ class _AddAssetPageState extends State<AddAssetPage> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Asset Info
+                      // Image URL TextField
                       TextField(
-                        controller: _assetInfoCtrl,
-                        maxLines: 2,
+                        controller: _imageUrlController,
+                        style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Asset Information',
-                          hintText: 'Enter additional information about the asset (model, specifications, etc.)',
+                          labelText: 'Image URL (optional)',
+                          hintText: 'https://example.com/image.jpg',
+                          hintStyle: const TextStyle(color: Colors.white38),
                           labelStyle: const TextStyle(color: Colors.white70),
-                          hintStyle: const TextStyle(color: Colors.white60, fontSize: 12),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
                           filled: true,
                           fillColor: const Color(0xFF223A5E),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.lightGreenAccent),
+                          ),
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.preview, color: Colors.white70),
+                            onPressed: _previewImage,
+                            tooltip: 'Preview Image',
+                          ),
+                        ),
+                        onChanged: (_) => _previewImage(),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Leave empty to use default image',
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Description TextField
+                      TextField(
+                        controller: _descriptionCtrl,
+                        style: const TextStyle(color: Colors.white),
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: 'Description',
+                          hintText: 'Enter additional information about the asset',
+                          hintStyle: const TextStyle(color: Colors.white38),
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 15),
+                          filled: true,
+                          fillColor: const Color(0xFF223A5E),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Colors.lightGreenAccent),
+                          ),
                           alignLabelWithHint: true,
                         ),
-                        style: const TextStyle(color: Colors.white),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 25),
                       
                       // Confirm Button
-                      ElevatedButton(
-                        onPressed: _handleConfirm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF39B54A),
-                          minimumSize: const Size(double.infinity, 45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _handleConfirm,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF39B54A),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            disabledBackgroundColor: Colors.grey,
                           ),
-                          shadowColor: Colors.transparent,
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Confirm',
+                                  style: TextStyle(color: Colors.white, fontSize: 16),
+                                ),
                         ),
-                        child: const Text('Confirm',
-                            style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                       const SizedBox(height: 12),
                       
                       // Cancel Button
-                      ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD53D3D),
-                          minimumSize: const Size(double.infinity, 45),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 45,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : () => Navigator.maybePop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD53D3D),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            disabledBackgroundColor: Colors.grey,
                           ),
-                          shadowColor: Colors.transparent,
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
                         ),
-                        child: const Text('Cancel',
-                            style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ],
                   ),
@@ -503,12 +649,6 @@ class _AddAssetPageState extends State<AddAssetPage> {
       ),
     );
   }
-}
-
-/* ====================== Helpers ====================== */
-
-void _toast(BuildContext context, String msg) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
 }
 
 

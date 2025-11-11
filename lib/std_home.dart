@@ -278,28 +278,32 @@ class _StdHomeState extends State<StdHome> {
                 ListTile(
                   leading: const Icon(Icons.history_edu, color: Colors.white),
                   title: const Text('Check Status', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const StdStatus(),
                       ),
                     );
+                    // Reload assets after returning from status page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.history_toggle_off, color: Colors.white),
                   title: const Text('Borrowing History',
                       style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const StdHistory(),
                       ),
                     );
+                    // Reload assets after returning from history page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
@@ -440,13 +444,15 @@ class _StdHomeState extends State<StdHome> {
                             itemBuilder: (context, index) {
                               final asset = filteredAssets[index];
                               return GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
+                                onTap: () async {
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => StdRequest(asset: asset),
                                     ),
                                   );
+                                  // Reload assets after returning from request page
+                                  _loadAssets();
                                 },
                                 child: Card(
                                   color: const Color(0xFF1B3358),

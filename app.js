@@ -25,7 +25,7 @@ con.query("SELECT 1", function(err) {
 //-------------------------- login ------------------------
 app.post('/api/login', (req, res) => {
     const {user_id, password} = req.body;
-    const sql = "SELECT user_id, username, password, role, profile_image FROM users WHERE user_id = ?";
+    const sql = "SELECT user_id, username, password, role FROM users WHERE user_id = ?";
     con.query(sql, [user_id], function(err, results) {
         if(err) {
             console.error(err.message);
@@ -48,8 +48,7 @@ app.post('/api/login', (req, res) => {
                 user: {
                     user_id: user.user_id,
                     username: user.username,
-                    role: user.role,
-                    profile_image: user.profile_image
+                    role: user.role
                 }
             });
         }
@@ -305,6 +304,60 @@ app.put('/api/assets/:assetId/enable', (req, res) => {
     });
 });
 
+//-------------------------- Update asset (staff only) ------------------------
+app.put('/api/assets/:assetId', (req, res) => {
+    const assetId = req.params.assetId;
+    const { asset_name, asset_type, status, description, image_src } = req.body;
+
+    if (!asset_name || !asset_type || !status || !description) {
+        return res.status(400).json({ error: "asset_name, asset_type, status, and description are required" });
+    }
+
+    const updateSql = "UPDATE assets SET asset_name = ?, asset_type = ?, status = ?, description = ?, image_src = ? WHERE asset_id = ?";
+    con.query(updateSql, [asset_name, asset_type, status, description, image_src, assetId], function (err, result) {
+        if (err) {
+            console.error(err.message);
+            return res.status(500).json({ error: "Database server error" });
+        }
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Asset not found" });
+        }
+
+        res.json({ message: 'Asset updated successfully' });
+    });
+});
+
+//-------------------------- Add new asset (staff only) ------------------------
+app.post('/api/assets', (req, res) => {
+    const { asset_name, asset_type, status, description, image_src } = req.body;
+
+    // Validation
+    if (!asset_name || !asset_type || !status || !description) {
+        return res.status(400).json({ error: "Missing required fields: asset name, type, status, and description are required" });
+    }
+
+    // Only allow Available or Disabled status for new assets
+    if (status !== 'Available' && status !== 'Disabled') {
+        return res.status(400).json({ error: "Status must be Available or Disabled" });
+    }
+
+    const sql = `INSERT INTO assets (asset_name, asset_type, status, description, image_src) 
+                 VALUES (?, ?, ?, ?, ?)`;
+    
+    con.query(sql, [asset_name, asset_type, status, description, image_src || null], function(err, result) {
+        if (err) {
+            console.error('Error adding asset:', err.message);
+            return res.status(500).json({ error: "Database server error" });
+        }
+
+        res.json({ 
+            message: 'Asset added successfully',
+            asset_id: result.insertId
+        });
+    });
+});
+
 //========================== Requests API ====================================
 //-------------------------- Get ALL pending requests (for lecturers/staff) ------------------------
 app.get('/api/requests', (req, res) => {
@@ -333,7 +386,8 @@ app.get('/api/requests/returned/all', (req, res) => {
                  FROM requests r 
                  JOIN assets a ON r.asset_id = a.asset_id 
                  JOIN users u ON r.user_id = u.user_id
-                 WHERE r.status = 'Returned'
+                 LEFT JOIN history h ON r.req_id = h.request_id
+                 WHERE r.status = 'Returned' AND (h.status IS NULL OR h.status != 'Returned')
                  ORDER BY r.borrow_date DESC`;
     con.query(sql, function (err, results) {
         if (err) {
@@ -368,7 +422,8 @@ app.post('/api/requests', (req, res) => {
     
     // Check if user has an active (non-rejected) request today
     // Students can make a new request if their previous request was rejected
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const checkTodayRequestSql = `SELECT COUNT(*) as count FROM requests r 
                                   WHERE r.user_id = ? 
                                   AND DATE(r.borrow_date) = ? 
@@ -401,9 +456,12 @@ app.post('/api/requests', (req, res) => {
             }
             
             // Create request and update asset status
-            const borrowDate = new Date();
-            const returnDate = new Date();
-            returnDate.setDate(returnDate.getDate() + 1); // 1 day borrow period
+            // Use date-only strings to avoid timezone issues
+            const now = new Date();
+            const borrowDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const returnDate = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
             
             const insertRequestSql = "INSERT INTO requests (asset_id, user_id, borrow_date, return_date, status) VALUES (?, ?, ?, ?, 'Pending')";
             con.query(insertRequestSql, [asset_id, user_id, borrowDate, returnDate], function (err, result) {
@@ -503,10 +561,10 @@ app.put('/api/requests/:requestId', (req, res) => {
                     return res.status(500).json({ error: "Database server error" });
                 }
                 
-                // Add to history with Rejected status
+                // Add to history with Rejected status (return_date should be NULL for rejected requests)
                 const insertHistorySql = `INSERT INTO history (request_id, asset_id, user_id, borrowed_date, approver_id, return_date, reject_reason, status) 
-                                          VALUES (?, ?, ?, ?, ?, ?, ?, 'Rejected')`;
-                con.query(insertHistorySql, [requestId, request.asset_id, request.user_id, request.borrow_date, approver_id, request.return_date, reject_reason || ''], function (err) {
+                                          VALUES (?, ?, ?, ?, ?, NULL, ?, 'Rejected')`;
+                con.query(insertHistorySql, [requestId, request.asset_id, request.user_id, request.borrow_date, approver_id, reject_reason || ''], function (err) {
                     if (err) {
                         console.error(err.message);
                         return res.status(500).json({ error: "Database server error" });
@@ -527,71 +585,85 @@ app.put('/api/requests/:requestId', (req, res) => {
         });
     } else if (action === 'return') {
         // Student-initiated return: Mark Approved request as Returned
+        console.log(`[STUDENT_RETURN] Request ID: ${requestId}, User ID: ${req.body.user_id}`);
         // The request must be in 'Approved' status
         const getRequestSql = "SELECT * FROM requests WHERE req_id = ? AND status = 'Approved'";
         con.query(getRequestSql, [requestId], function (err, results) {
             if (err) {
-                console.error(err.message);
+                console.error('[STUDENT_RETURN ERROR] Get request:', err.message);
                 return res.status(500).json({ error: "Database server error" });
             }
             
             if (results.length === 0) {
+                console.log('[STUDENT_RETURN] No approved request found for ID:', requestId);
                 return res.status(404).json({ error: "Approved request not found" });
             }
             
+            console.log('[STUDENT_RETURN] Found approved request, updating to Returned');
             // Update request status to Returned
             const updateRequestSql = "UPDATE requests SET status = 'Returned' WHERE req_id = ?";
-            con.query(updateRequestSql, [requestId], function (err) {
+            con.query(updateRequestSql, [requestId], function (err, result) {
                 if (err) {
-                    console.error(err.message);
+                    console.error('[STUDENT_RETURN ERROR] Update request:', err.message);
                     return res.status(500).json({ error: "Database server error" });
                 }
+                console.log(`[STUDENT_RETURN] ✓ Request updated to Returned. Rows affected: ${result.affectedRows}`);
                 
                 res.json({ message: 'Return request submitted successfully' });
             });
         });
     } else if (action === 'confirm_return') {
         // Staff-initiated return confirmation: Update history status and return_date
+        console.log(`[CONFIRM_RETURN] Request ID: ${requestId}, Staff ID: ${req.body.staff_id}`);
         const getRequestSql = "SELECT * FROM requests WHERE req_id = ? AND status = 'Returned'";
         con.query(getRequestSql, [requestId], function (err, results) {
             if (err) {
-                console.error(err.message);
+                console.error('[CONFIRM_RETURN ERROR] Get request:', err.message);
                 return res.status(500).json({ error: "Database server error" });
             }
             
             if (results.length === 0) {
+                console.log('[CONFIRM_RETURN] No returned request found for ID:', requestId);
                 return res.status(404).json({ error: "Returned request not found" });
             }
             
             const request = results[0];
             const staff_id = req.body.staff_id; // Staff member who confirmed the return
-            const today = new Date().toISOString().split('T')[0];
+            // Use local date string to avoid timezone issues
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+            console.log(`[CONFIRM_RETURN] Found request. Asset ID: ${request.asset_id}, Date: ${today}`);
             
             // Update asset status to Available
             const updateAssetSql = "UPDATE assets SET status = 'Available' WHERE asset_id = ?";
-            con.query(updateAssetSql, [request.asset_id], function (err) {
+            con.query(updateAssetSql, [request.asset_id], function (err, result) {
                 if (err) {
-                    console.error(err.message);
+                    console.error('[CONFIRM_RETURN ERROR] Update asset:', err.message);
                     return res.status(500).json({ error: "Database server error" });
                 }
+                console.log(`[CONFIRM_RETURN] Asset updated. Rows affected: ${result.affectedRows}`);
                 
                 // Update existing history record: set status to 'Returned', update return_date and staff_id
                 const updateHistorySql = `UPDATE history 
                                          SET status = 'Returned', return_date = ?, staff_id = ? 
-                                         WHERE request_id = ? AND status = 'Approved'`;
-                con.query(updateHistorySql, [today, staff_id, requestId], function (err) {
+                                         WHERE request_id = ?`;
+                con.query(updateHistorySql, [today, staff_id, requestId], function (err, result) {
                     if (err) {
-                        console.error(err.message);
+                        console.error('[CONFIRM_RETURN ERROR] Update history:', err.message);
                         return res.status(500).json({ error: "Database server error" });
                     }
+                    console.log(`[CONFIRM_RETURN] History updated. Rows affected: ${result.affectedRows}`);
                     
-                    // Update request status to 'Returned' (completed)
-                    const updateRequestSql = "UPDATE requests SET status = 'Returned' WHERE req_id = ?";
-                    con.query(updateRequestSql, [requestId], function (err) {
+                    // Update request status to 'Confirmed' to mark as completed
+                    const updateRequestSql = "UPDATE requests SET status = 'Confirmed' WHERE req_id = ?";
+                    con.query(updateRequestSql, [requestId], function (err, result) {
                         if (err) {
-                            console.error(err.message);
+                            console.error('[CONFIRM_RETURN ERROR] Update request:', err.message);
                             return res.status(500).json({ error: "Database server error" });
                         }
+                        console.log(`[CONFIRM_RETURN] Request updated. Rows affected: ${result.affectedRows}`);
+                        console.log('[CONFIRM_RETURN] ✓ All updates completed successfully');
                         
                         res.json({ message: 'Asset return confirmed successfully' });
                     });

@@ -7,6 +7,7 @@ import 'stf_edit.dart';
 import 'edit_profile.dart';
 import 'welcome.dart';
 import 'services/user_session.dart';
+import 'services/asset_service.dart';
 
 /// =====================================================
 /// Staff Dashboard (UI only, no navigation)
@@ -21,14 +22,17 @@ class StaffDashboardPage extends StatefulWidget {
 class _StaffDashboardPageState extends State<StaffDashboardPage> {
   String? selectedStatus; // null means show all
   String _searchQuery = ''; // Track search query
-  String _selectedFilter = 'All'; // Track selected filter
+  String _selectedFilter = 'All'; // Track selected filter (type), 'All' or empty means show all types
   String? _currentUsername;
   String? _currentProfileImage;
+  List<Map<String, dynamic>> allAssets = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _loadAssets();
   }
 
   void _loadUserInfo() {
@@ -37,6 +41,35 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
       _currentProfileImage = UserSession.getCurrentProfileImage();
     });
   }
+
+  Future<void> _loadAssets() async {
+    try {
+      final assets = await AssetService.getAllAssets();
+      setState(() {
+        allAssets = assets.map((asset) => {
+          'asset_id': asset['asset_id'].toString(),
+          'name': asset['asset_name'] ?? 'Unknown',
+          'type': asset['asset_type'] ?? 'Unknown',
+          'status': asset['status'] ?? 'Unknown',
+          'description': asset['description'] ?? '',
+          'image': asset['image_src'] ?? 'https://via.placeholder.com/300x200/1B3358/FFFFFF?text=No+Image',
+        }).toList().cast<Map<String, dynamic>>();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load assets: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
   
   void _onSearchChanged(String query) {
     setState(() {
@@ -44,82 +77,16 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
     });
   }
 
-  final List<Map<String, String>> allAssets = const [
-    {
-      'assetId': 'CAM001',
-      'name': 'Canon EOS R10',
-      'type': 'Camera',
-      'status': 'Available',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'assetId': 'CAM002',
-      'name': 'Sony A7C',
-      'type': 'Camera',
-      'status': 'Borrowed',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'assetId': 'TAB001',
-      'name': 'iPad Air 5',
-      'type': 'Tablet',
-      'status': 'Disabled',
-      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
-    },
-    {
-      'assetId': 'LAP001',
-      'name': 'ASUS TUF F15',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-    {
-      'assetId': 'LAP002',
-      'name': 'Macbook Air M2',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/442496/TH_MacBook_Air_13-inch_M2_Midnight_-1-square_medium.jpg',
-    },
-    {
-      'assetId': 'TAB002',
-      'name': 'iPad Pro 11',
-      'type': 'Tablet',
-      'status': 'Borrowed',
-      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
-    },
-    {
-      'assetId': 'CAM003',
-      'name': 'Nikon Z6',
-      'type': 'Camera',
-      'status': 'Available',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'assetId': 'LAP003',
-      'name': 'Dell XPS 15',
-      'type': 'Laptop',
-      'status': 'Disabled',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-    {
-      'assetId': 'LAP004',
-      'name': 'HP Pavilion',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-  ];
-
-  List<Map<String, String>> get filteredAssets {
-    List<Map<String, String>> filtered = allAssets;
+  List<Map<String, dynamic>> get filteredAssets {
+    List<Map<String, dynamic>> filtered = allAssets;
     
     // Apply status filter
     if (selectedStatus != null) {
       filtered = filtered.where((asset) => asset['status'] == selectedStatus).toList();
     }
     
-    // Apply category filter
-    if (_selectedFilter != 'All') {
+    // Apply type filter (only if a specific type is selected, not 'All' or empty)
+    if (_selectedFilter.isNotEmpty && _selectedFilter != 'All') {
       filtered = filtered.where((asset) => asset['type'] == _selectedFilter).toList();
     }
     
@@ -127,15 +94,16 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
     if (_searchQuery.isNotEmpty) {
       final searchTerm = _searchQuery.toLowerCase();
       filtered = filtered.where((asset) => 
-        asset['name']!.toLowerCase().contains(searchTerm) ||
-        asset['type']!.toLowerCase().contains(searchTerm) ||
-        asset['assetId']!.toLowerCase().contains(searchTerm)
+        asset['name']!.toString().toLowerCase().contains(searchTerm) ||
+        asset['type']!.toString().toLowerCase().contains(searchTerm) ||
+        asset['asset_id']!.toString().toLowerCase().contains(searchTerm)
       ).toList();
     }
     
     return filtered;
   }
 
+  int get totalCount => allAssets.length;
   int get availableCount => allAssets.where((a) => a['status'] == 'Available').length;
   int get borrowedCount => allAssets.where((a) => a['status'] == 'Borrowed').length;
   int get disabledCount => allAssets.where((a) => a['status'] == 'Disabled').length;
@@ -281,34 +249,40 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
                 ListTile(
                   leading: const Icon(Icons.add_box, color: Colors.white),
                   title: const Text('Add new asset', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const AddAssetPage()),
                     );
+                    // Reload assets after returning from add page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.assignment_return, color: Colors.white),
                   title: const Text('Asset return', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const ReturnStaff()),
                     );
+                    // Reload assets after returning from return page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.history, color: Colors.white),
                   title: const Text('History', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const HistoryStaff()),
                     );
+                    // Reload assets after returning from history page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
@@ -366,64 +340,88 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
               colors: [Color(0xFF0E2430), Color(0xFF143A4A), Color(0xFF1E5B74)],
             ),
           ),
-          child: Column(
-            children: [
-              // Fixed top section
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                )
+              : Column(
                   children: [
-                    _StaffSearchBar(onSearchChanged: _onSearchChanged),
-                    const SizedBox(height: 12),
-                    _StaffFilterChips(
-                      selectedFilter: _selectedFilter,
-                      onFilterChanged: (filter) {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
+                    // Fixed top section
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          _StaffSearchBar(onSearchChanged: _onSearchChanged),
+                          const SizedBox(height: 12),
+                          _StaffFilterChips(
+                            selectedFilter: _selectedFilter,
+                            onFilterChanged: (filter) {
+                              setState(() {
+                                // If "All" is clicked, clear filter
+                                if (filter == 'All') {
+                                  _selectedFilter = '';
+                                } else {
+                                  // Toggle filter: if same filter clicked, unselect it
+                                  _selectedFilter = _selectedFilter == filter ? '' : filter;
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          _KpiRow(
+                            totalCount: totalCount,
+                            availableCount: availableCount,
+                            borrowedCount: borrowedCount,
+                            disabledCount: disabledCount,
+                            selectedStatus: selectedStatus,
+                            onStatusTap: (status) {
+                              setState(() {
+                                // Toggle filter: if same status clicked, clear filter (null)
+                                // "All" button sets selectedStatus to null
+                                if (status == 'All') {
+                                  selectedStatus = null;
+                                } else {
+                                  selectedStatus = selectedStatus == status ? null : status;
+                                }
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          const Align(
+                            alignment: Alignment.centerLeft,
+                            child: _SectionTitle('Asset List'),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    _KpiRow(
-                      availableCount: availableCount,
-                      borrowedCount: borrowedCount,
-                      disabledCount: disabledCount,
-                      selectedStatus: selectedStatus,
-                      onStatusTap: (status) {
-                        setState(() {
-                          // Toggle filter: if same status clicked, clear filter
-                          selectedStatus = selectedStatus == status ? null : status;
-                        });
-                      },
+                    // Scrollable cards section
+                    Expanded(
+                      child: filteredAssets.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No assets found',
+                                style: TextStyle(color: Colors.white, fontSize: 16),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: filteredAssets.length,
+                              itemBuilder: (context, index) {
+                                final asset = filteredAssets[index];
+                                return _StaffAssetCard(
+                                  assetId: asset['asset_id']!.toString(),
+                                  name: asset['name']!.toString(),
+                                  type: asset['type']!.toString(),
+                                  status: asset['status']!.toString(),
+                                  image: asset['image']!.toString(),
+                                  onUpdate: _loadAssets,
+                                );
+                              },
+                            ),
                     ),
-                    const SizedBox(height: 20),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: _SectionTitle('Today'),
-                    ),
-                    const SizedBox(height: 8),
                   ],
                 ),
-              ),
-              // Scrollable cards section
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filteredAssets.length,
-                  itemBuilder: (context, index) {
-                    final asset = filteredAssets[index];
-                    return _StaffAssetCard(
-                      assetId: asset['assetId']!,
-                      name: asset['name']!,
-                      type: asset['type']!,
-                      status: asset['status']!,
-                      image: asset['image']!,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -432,6 +430,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
 
 /* ========================= KPI Row ========================= */
 class _KpiRow extends StatelessWidget {
+  final int totalCount;
   final int availableCount;
   final int borrowedCount;
   final int disabledCount;
@@ -439,6 +438,7 @@ class _KpiRow extends StatelessWidget {
   final Function(String) onStatusTap;
 
   const _KpiRow({
+    required this.totalCount,
     required this.availableCount,
     required this.borrowedCount,
     required this.disabledCount,
@@ -448,29 +448,46 @@ class _KpiRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
       children: [
-        _KpiButton(
-          title: 'Available',
-          count: availableCount,
-          color: Colors.green,
-          isSelected: selectedStatus == 'Available',
-          onTap: () => onStatusTap('Available'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _KpiButton(
+              title: 'All',
+              count: totalCount,
+              color: Colors.blue,
+              isSelected: selectedStatus == null,
+              onTap: () => onStatusTap('All'),
+            ),
+            _KpiButton(
+              title: 'Available',
+              count: availableCount,
+              color: Colors.green,
+              isSelected: selectedStatus == 'Available',
+              onTap: () => onStatusTap('Available'),
+            ),
+          ],
         ),
-        _KpiButton(
-          title: 'Borrowed',
-          count: borrowedCount,
-          color: Colors.orange,
-          isSelected: selectedStatus == 'Borrowed',
-          onTap: () => onStatusTap('Borrowed'),
-        ),
-        _KpiButton(
-          title: 'Disabled',
-          count: disabledCount,
-          color: Colors.grey,
-          isSelected: selectedStatus == 'Disabled',
-          onTap: () => onStatusTap('Disabled'),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _KpiButton(
+              title: 'Borrowed',
+              count: borrowedCount,
+              color: Colors.orange,
+              isSelected: selectedStatus == 'Borrowed',
+              onTap: () => onStatusTap('Borrowed'),
+            ),
+            _KpiButton(
+              title: 'Disabled',
+              count: disabledCount,
+              color: Colors.grey,
+              isSelected: selectedStatus == 'Disabled',
+              onTap: () => onStatusTap('Disabled'),
+            ),
+          ],
         ),
       ],
     );
@@ -506,24 +523,35 @@ class _KpiButton extends StatelessWidget {
                 : BorderSide.none,
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-            child: Column(
-              children: [
-                Icon(
-                  title == 'Available'
-                      ? Icons.check_circle
-                      : title == 'Borrowed'
-                          ? Icons.schedule
-                          : Icons.cancel,
-                  color: color,
-                  size: 18,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                height: 40,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      title == 'All'
+                          ? Icons.apps
+                          : title == 'Available'
+                              ? Icons.check_circle
+                              : title == 'Borrowed'
+                                  ? Icons.access_time
+                                  : Icons.remove_circle,
+                      color: color,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(title,
+                        style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 6),
+                    Text('$count',
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(title, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 4),
-                Text('$count',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              ],
+              ),
             ),
           ),
         ),
@@ -557,6 +585,7 @@ class _StaffAssetCard extends StatelessWidget {
   final String type;
   final String status;
   final String image;
+  final VoidCallback? onUpdate;
 
   const _StaffAssetCard({
     required this.assetId,
@@ -564,6 +593,7 @@ class _StaffAssetCard extends StatelessWidget {
     required this.type,
     required this.status,
     required this.image,
+    this.onUpdate,
   });
 
   Color get statusColor {
@@ -631,8 +661,8 @@ class _StaffAssetCard extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => EditAssetPage(
@@ -643,6 +673,8 @@ class _StaffAssetCard extends StatelessWidget {
                     ),
                   ),
                 );
+                // Reload assets after returning from edit page
+                onUpdate?.call();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6EAAD7),
@@ -759,10 +791,17 @@ class _StaffFilterChips extends StatelessWidget {
       child: Row(
         children: [
           _buildFilterChip('All'),
+          _buildFilterChip('Laptop'),
+          _buildFilterChip('Mouse'),
+          _buildFilterChip('Keyboard'),
+          _buildFilterChip('Monitor'),
           _buildFilterChip('Camera'),
           _buildFilterChip('Tablet'),
-          _buildFilterChip('Laptop'),
-          _buildFilterChip('Lens'),
+          _buildFilterChip('Projector'),
+          _buildFilterChip('Adapter'),
+          _buildFilterChip('Storage'),
+          _buildFilterChip('Headphones'),
+          _buildFilterChip('Webcam'),
         ],
       ),
     );

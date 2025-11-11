@@ -91,7 +91,7 @@ class _LecturerHistoryPageState extends State<LecturerHistoryPage> {
   String _extractDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateStr.split(' ')[0].split('T')[0];
@@ -100,7 +100,7 @@ class _LecturerHistoryPageState extends State<LecturerHistoryPage> {
 
   String _formatDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
       return dateStr;
@@ -109,7 +109,7 @@ class _LecturerHistoryPageState extends State<LecturerHistoryPage> {
 
   String _formatShortDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString().substring(2)}';
     } catch (e) {
       return dateStr;

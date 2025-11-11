@@ -110,7 +110,6 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
       });
       
       if (mounted) {
-        Navigator.of(context).pop(); // Close disapproval dialog
         _showResponseDialog(context, 'Request disapproved', Colors.red);
       }
     } catch (e) {
@@ -129,7 +128,7 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
   String _extractDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateStr.split(' ')[0].split('T')[0];
@@ -138,7 +137,7 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
 
   String _formatDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString().substring(2)}';
     } catch (e) {
       return dateStr;
@@ -269,7 +268,7 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
   }
 
   void _showDisapprovalDialog(BuildContext context, String requestId, int index) {
-    final TextEditingController reasonController = TextEditingController();
+    String reason = '';
     
     showDialog<void>(
       context: context,
@@ -300,7 +299,7 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: reasonController,
+                  onChanged: (value) => reason = value,
                   maxLines: 4,
                   decoration: InputDecoration(
                     hintText: 'Please enter the reason for disapproval...',
@@ -321,7 +320,6 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          reasonController.dispose();
                           Navigator.of(ctx).pop();
                         },
                         style: ElevatedButton.styleFrom(
@@ -341,20 +339,20 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          final reason = reasonController.text.trim();
-                          reasonController.dispose();
+                          Navigator.of(ctx).pop();
                           
-                          if (reason.isNotEmpty) {
-                            _rejectRequest(requestId, reason, index);
-                          } else {
-                            Navigator.of(ctx).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please provide a reason for disapproval'),
-                                backgroundColor: Colors.orange,
-                              ),
-                            );
-                          }
+                          Future.microtask(() {
+                            if (reason.trim().isNotEmpty) {
+                              _rejectRequest(requestId, reason.trim(), index);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please provide a reason for disapproval'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
@@ -478,12 +476,14 @@ class _LecturerRequestsPageState extends State<LecturerRequestsPage> {
               ListTile(
                 leading: const Icon(Icons.history, color: Colors.white),
                 title: const Text('History', style: TextStyle(color: Colors.white)),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const LecturerHistoryPage()),
                   );
+                  // Reload requests after returning from history page
+                  _loadPendingRequests();
                 },
               ),
               ListTile(

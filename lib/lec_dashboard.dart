@@ -5,6 +5,7 @@ import 'lec_history.dart';
 import 'edit_profile.dart';
 import 'welcome.dart';
 import 'services/user_session.dart';
+import 'services/asset_service.dart';
 
 class LecDashboard extends StatefulWidget {
   const LecDashboard({super.key});
@@ -19,11 +20,14 @@ class _LecDashboardState extends State<LecDashboard> {
   String _searchQuery = ''; // Track search query
   String? _currentUsername;
   String? _currentProfileImage;
+  List<Map<String, dynamic>> allAssets = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
+    _loadAssets();
   }
 
   void _loadUserInfo() {
@@ -32,6 +36,33 @@ class _LecDashboardState extends State<LecDashboard> {
       _currentProfileImage = UserSession.getCurrentProfileImage();
     });
   }
+
+  Future<void> _loadAssets() async {
+    try {
+      final assets = await AssetService.getAllAssets();
+      setState(() {
+        allAssets = assets.map((asset) => {
+          'name': asset['asset_name'] ?? 'Unknown',
+          'type': asset['asset_type'] ?? 'Unknown',
+          'status': asset['status'] ?? 'Unknown',
+          'image': asset['image_src'] ?? 'https://via.placeholder.com/300x200/1B3358/FFFFFF?text=No+Image',
+        }).toList().cast<Map<String, dynamic>>();
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load assets: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
   
   void _onSearchChanged(String query) {
     setState(() {
@@ -39,77 +70,8 @@ class _LecDashboardState extends State<LecDashboard> {
     });
   }
 
-  final List<Map<String, String>> allAssets = const [
-    {
-      'name': 'Canon EOS R10',
-      'type': 'Camera',
-      'status': 'Available',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'name': 'Sony A7C',
-      'type': 'Camera',
-      'status': 'Borrowed',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/69a3da6bcd95df779892f4b24fa6a6f7/s/o/sony-a7c_1.png',
-    },
-    {
-      'name': 'iPad Air 5',
-      'type': 'Tablet',
-      'status': 'Disabled',
-      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
-    },
-    {
-      'name': 'ASUS TUF F15',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-    {
-      'name': 'Macbook Air M2',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/442496/TH_MacBook_Air_13-inch_M2_Midnight_-1-square_medium.jpg',
-    },
-    {
-      'name': 'Canon 50mm Lens',
-      'type': 'Lens',
-      'status': 'Available',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'name': 'Dell XPS 13',
-      'type': 'Laptop',
-      'status': 'Disabled',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-    {
-      'name': 'iPad Pro 11',
-      'type': 'Tablet',
-      'status': 'Borrowed',
-      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
-    },
-    {
-      'name': 'Nikon Z6',
-      'type': 'Camera',
-      'status': 'Available',
-      'image': 'https://www.bigcamera.co.th/media/catalog/product/cache/6cfb1b58b487867e47102a5ca923201b/1/6/1653353121_1708097.jpg',
-    },
-    {
-      'name': 'HP Pavilion',
-      'type': 'Laptop',
-      'status': 'Available',
-      'image': 'https://media-cdn.bnn.in.th/317594/Asus-TUF-Gaming-F15-FX506LH-HN004W-square_medium.jpg',
-    },
-    {
-      'name': 'Samsung Tab S8',
-      'type': 'Tablet',
-      'status': 'Borrowed',
-      'image': 'https://static-jaymart.com/ecom/public/2mdZjASmEDHyucCtzlOhlsIDjrj.jpg',
-    },
-  ];
-
-  List<Map<String, String>> get filteredAssets {
-    List<Map<String, String>> filtered = allAssets;
+  List<Map<String, dynamic>> get filteredAssets {
+    List<Map<String, dynamic>> filtered = allAssets;
     
     // Apply status filter
     if (selectedStatus != null) {
@@ -120,8 +82,8 @@ class _LecDashboardState extends State<LecDashboard> {
     if (_searchQuery.isNotEmpty) {
       final searchTerm = _searchQuery.toLowerCase();
       filtered = filtered.where((asset) => 
-        asset['name']!.toLowerCase().contains(searchTerm) ||
-        asset['type']!.toLowerCase().contains(searchTerm)
+        asset['name']!.toString().toLowerCase().contains(searchTerm) ||
+        asset['type']!.toString().toLowerCase().contains(searchTerm)
       ).toList();
     }
     
@@ -272,23 +234,27 @@ class _LecDashboardState extends State<LecDashboard> {
                 ListTile(
                   leading: const Icon(Icons.inbox, color: Colors.white),
                   title: const Text('Check requests', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LecturerRequestsPage()),
                     );
+                    // Reload assets after returning from requests page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
                   leading: const Icon(Icons.history, color: Colors.white),
                   title: const Text('History', style: TextStyle(color: Colors.white)),
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
-                    Navigator.push(
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const LecturerHistoryPage()),
                     );
+                    // Reload assets after returning from history page
+                    _loadAssets();
                   },
                 ),
                 ListTile(
@@ -368,18 +334,29 @@ class _LecDashboardState extends State<LecDashboard> {
                   ),
                   const SizedBox(height: 8),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: filteredAssets.length,
-                      itemBuilder: (context, index) {
-                        final asset = filteredAssets[index];
-                        return _AssetCard(
-                          name: asset['name']!,
-                          type: asset['type']!,
-                          status: asset['status']!,
-                          image: asset['image']!,
-                        );
-                      },
-                    ),
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          )
+                        : allAssets.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'No assets found',
+                                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                                ),
+                              )
+                            : ListView.builder(
+                                itemCount: filteredAssets.length,
+                                itemBuilder: (context, index) {
+                                  final asset = filteredAssets[index];
+                                  return _AssetCard(
+                                    name: asset['name']!.toString(),
+                                    type: asset['type']!.toString(),
+                                    status: asset['status']!.toString(),
+                                    image: asset['image']!.toString(),
+                                  );
+                                },
+                              ),
                   ),
                 ],
               ),

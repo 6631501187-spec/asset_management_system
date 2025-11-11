@@ -3,10 +3,9 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Choose the correct URL based on your testing environment:
-  // static const String baseUrl = 'http://localhost:3000/api'; // For web or desktop (default)
-  // Alternative URLs:
-  static const String baseUrl = 'http://192.168.1.168:3000/api'; // For Android emulator
-  // static const String baseUrl = 'http://192.168.1.168:3000/api'; // For physical device (use your IP)
+  // static const String baseUrl = 'http://localhost:3000/api'; // For web or desktop
+  // static const String baseUrl = 'http://10.0.2.2:3000/api'; // For Android emulator (default)
+  static const String baseUrl = 'http://192.168.1.168:3000/api'; // For physical device (use your IP)
   
   static const Map<String, String> _headers = {
     'Content-Type': 'application/json',

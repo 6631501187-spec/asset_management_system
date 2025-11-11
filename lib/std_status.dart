@@ -79,8 +79,8 @@ class _StdStatusState extends State<StdStatus> {
       final dateStr = dateValue.toString();
       // Handle both "YYYY-MM-DD" and "YYYY-MM-DDTHH:mm:ss.sssZ" formats
       if (dateStr.contains('T')) {
-        // ISO format - parse and extract date only
-        final date = DateTime.parse(dateStr);
+        // ISO format - parse as UTC and convert to local
+        final date = DateTime.parse(dateStr).toLocal();
         return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
       } else {
         // Already in date format, just take the date part
@@ -246,12 +246,14 @@ class _StdStatusState extends State<StdStatus> {
               ListTile(
                 leading: const Icon(Icons.history_toggle_off, color: Colors.white),
                 title: const Text('Borrowing History', style: TextStyle(color: Colors.white)),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const StdHistory()),
                   );
+                  // Reload requests after returning from history page
+                  _loadUserRequests();
                 },
               ),
               // Logout

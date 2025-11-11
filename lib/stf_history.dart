@@ -53,7 +53,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
           'assetName': item['asset_name'] ?? 'Unknown Asset',
           'borrower': item['borrower_name'] ?? 'Unknown',
           'approvedBy': item['approver_name'] ?? 'Unknown',
-          'receivedBy': item['staff_name'] ?? 'Staff',
+          'receivedBy': item['staff_name'] ?? '-',
           'borrowDate': _formatDate(borrowDate),
           'returnDate': returnDate != 'N/A' ? _formatDate(returnDate) : 'N/A',
           'rejectReason': item['reject_reason'] ?? '',
@@ -84,7 +84,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
   String _extractDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateStr.split(' ')[0].split('T')[0];
@@ -93,7 +93,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
 
   String _formatDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
       return dateStr;
@@ -293,9 +293,20 @@ class _HistoryStaffState extends State<HistoryStaff> {
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, dynamic>> filteredData = selectedFilter == 'All'
-        ? historyData
-        : historyData.where((item) => item['status'] == selectedFilter).toList();
+    List<Map<String, dynamic>> filteredData;
+    
+    if (selectedFilter == 'All') {
+      filteredData = historyData;
+    } else if (selectedFilter == 'Approved') {
+      // Show both Approved and Returned statuses
+      filteredData = historyData.where((item) => 
+        item['status'] == 'Approved' || item['status'] == 'Returned'
+      ).toList();
+    } else if (selectedFilter == 'Rejected') {
+      filteredData = historyData.where((item) => item['status'] == 'Rejected').toList();
+    } else {
+      filteredData = historyData;
+    }
 
     Map<String, List<Map<String, dynamic>>> groupedData = _groupByDate(filteredData);
 
@@ -352,7 +363,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
                     const SizedBox(width: 10),
                     _buildFilterChip('Approved', Colors.green),
                     const SizedBox(width: 10),
-                    _buildFilterChip('Disapproved', Colors.red),
+                    _buildFilterChip('Rejected', Colors.red),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -405,7 +416,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
 
   Widget _buildHistoryCard(Map<String, dynamic> item) {
     final status = item['status'];
-    final isRejected = status == 'Rejected' || status == 'Disapproved';
+    final isRejected = status == 'Rejected';
     final isApproved = status == 'Approved' || status == 'Returned';
     
     final bgColor = isApproved
@@ -444,7 +455,7 @@ class _HistoryStaffState extends State<HistoryStaff> {
                     style: const TextStyle(fontSize: 12, color: Colors.black87),
                   ),
                   Text(
-                    '${isApproved ? 'Approved' : 'Disapproved'} by: ${item['approvedBy']}',
+                    '${isApproved ? 'Approved' : 'Rejected'} by: ${item['approvedBy']}',
                     style: const TextStyle(fontSize: 12, color: Colors.black87),
                   ),
                   if (isRejected && item['rejectReason'] != null && item['rejectReason'].toString().isNotEmpty)

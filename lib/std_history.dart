@@ -115,8 +115,8 @@ class _StdHistoryState extends State<StdHistory> {
   String _extractDate(String dateStr) {
     if (dateStr.isEmpty) return '';
     try {
-      // Parse ISO datetime or simple date
-      final date = DateTime.parse(dateStr);
+      // Parse ISO datetime or simple date and convert to local
+      final date = DateTime.parse(dateStr).toLocal();
       // Return as YYYY-MM-DD
       return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     } catch (e) {
@@ -127,7 +127,7 @@ class _StdHistoryState extends State<StdHistory> {
 
   String _formatDate(String dateStr) {
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (e) {
       return dateStr;
