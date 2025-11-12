@@ -177,40 +177,11 @@ app.get('/api/password/:plainPassword', async (req, res) => {
     }
 });
 
-// Test page for emulator connectivity
-app.get('/test', (req, res) => {
-    res.sendFile(__dirname + '/test-connection.html');
-});
-
-// Server info endpoint
-app.get('/api/info', (req, res) => {
-    res.json({
-        status: 'running',
-        serverIP: '192.168.1.168',
-        port: 3000,
-        endpoints: [
-            'POST /api/login',
-            'POST /api/register',
-            'GET /api/user/:userId',
-            'PUT /api/user/:userId',
-            'GET /api/password/:plainPassword',
-            'GET /api/assets',
-            'GET /api/requests/:userId',
-            'POST /api/requests',
-            'PUT /api/requests/:requestId',
-            'GET /api/history/:userId',
-            'GET /api/info',
-            'GET /test'
-        ],
-        message: 'Backend API is running successfully',
-        timestamp: new Date().toISOString()
-    });
-});
 
 //========================== Assets API ======================================
 //-------------------------- Get available assets ------------------------
 app.get('/api/assets', (req, res) => {
-    const sql = "SELECT asset_id, asset_name, asset_type, status, description, image_src FROM assets WHERE status = 'Available'";
+    const sql = "SELECT asset_id, asset_name, asset_type, description, image_src FROM assets WHERE status = 'Available'";
     con.query(sql, function (err, results) {
         if (err) {
             console.error(err.message);
@@ -229,78 +200,6 @@ app.get('/api/assets/all', (req, res) => {
             return res.status(500).json({ error: "Database server error" });
         }
         res.json(results);
-    });
-});
-
-//-------------------------- Get borrowed assets (for staff return page) ------------------------
-app.get('/api/assets/borrowed', (req, res) => {
-    const sql = `SELECT h.his_id, h.request_id, h.asset_id, h.user_id, h.borrowed_date, h.return_date,
-                        a.asset_name, a.asset_type, a.description, a.image_src,
-                        u.username as borrower_name
-                 FROM history h
-                 JOIN assets a ON h.asset_id = a.asset_id
-                 JOIN users u ON h.user_id = u.user_id
-                 WHERE h.status = 'Approved' AND a.status = 'Borrowed'
-                 ORDER BY h.borrowed_date DESC`;
-    con.query(sql, function (err, results) {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: "Database server error" });
-        }
-        res.json(results);
-    });
-});
-
-//-------------------------- Disable asset (staff only) ------------------------
-app.put('/api/assets/:assetId/disable', (req, res) => {
-    const assetId = req.params.assetId;
-    
-    // Check if asset exists and is Available
-    const checkAssetSql = "SELECT status FROM assets WHERE asset_id = ?";
-    con.query(checkAssetSql, [assetId], function (err, results) {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: "Database server error" });
-        }
-        
-        if (results.length === 0) {
-            return res.status(404).json({ error: "Asset not found" });
-        }
-        
-        if (results[0].status !== 'Available') {
-            return res.status(400).json({ error: "Only available assets can be disabled" });
-        }
-        
-        // Update asset status to Disabled
-        const updateSql = "UPDATE assets SET status = 'Disabled' WHERE asset_id = ?";
-        con.query(updateSql, [assetId], function (err) {
-            if (err) {
-                console.error(err.message);
-                return res.status(500).json({ error: "Database server error" });
-            }
-            
-            res.json({ message: 'Asset disabled successfully' });
-        });
-    });
-});
-
-//-------------------------- Enable asset (staff only) ------------------------
-app.put('/api/assets/:assetId/enable', (req, res) => {
-    const assetId = req.params.assetId;
-    
-    // Update asset status to Available
-    const updateSql = "UPDATE assets SET status = 'Available' WHERE asset_id = ? AND status = 'Disabled'";
-    con.query(updateSql, [assetId], function (err, result) {
-        if (err) {
-            console.error(err.message);
-            return res.status(500).json({ error: "Database server error" });
-        }
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Asset not found or not disabled" });
-        }
-        
-        res.json({ message: 'Asset enabled successfully' });
     });
 });
 

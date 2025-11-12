@@ -265,6 +265,7 @@ class _ReturnStaffState extends State<ReturnStaff> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(ctx).pop();
+                          UserSession.clearSession();
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) =>  Welcome()),
                             (route) => false,

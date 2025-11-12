@@ -15,7 +15,6 @@ class _LoginState extends State<Login> {
   final TextEditingController _userCtrl = TextEditingController();
   final TextEditingController _passCtrl = TextEditingController();
   bool _obscure = true;
-  bool _remember = false;
   bool _isLoading = false;
   String errorMessage = '';
 
@@ -78,7 +77,6 @@ class _LoginState extends State<Login> {
       });
       
     } catch (e) {
-      print('Login error: $e'); // Debug print
       setState(() {
         _isLoading = false;
         String message = e.toString();
@@ -288,23 +286,7 @@ class _LoginState extends State<Login> {
                             ),
                           ),
                         ),
-                      // remember me
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _remember,
-                            activeColor: Colors.white,
-                            checkColor: Color(0xFF0F161C),
-                            side: BorderSide(color: Colors.white),
-                            onChanged: (v) => setState(() => _remember = v ?? false),
-                          ),
-                          SizedBox(width: 6),
-                          Text(
-                            'remember me',
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        ],
-                      ),
+                     
                       Spacer(),
                       // Login button
                       Center(

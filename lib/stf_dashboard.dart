@@ -160,6 +160,7 @@ class _StaffDashboardPageState extends State<StaffDashboardPage> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(ctx).pop();
+                          UserSession.clearSession();
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(builder: (_) =>  Welcome()),
                             (route) => false,

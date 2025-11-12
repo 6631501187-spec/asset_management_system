@@ -417,7 +417,6 @@ class _RegisterState extends State<Register> {
                 ),
               ),
 
-              // keep spacing similar to image
               SizedBox(height: 12),
             ],
           ),
