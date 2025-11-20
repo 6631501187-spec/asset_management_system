@@ -49,7 +49,7 @@ class _LoginState extends State<Login> {
       });
 
       // Store user session
-      UserSession.setCurrentUser(response['user'], response['token']);
+      UserSession.setCurrentUser(response['user']);
 
       // Navigate based on user role
       final userRole = response['user']['role'].toString().toLowerCase();

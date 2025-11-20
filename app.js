@@ -40,11 +40,7 @@ app.post('/api/login', (req, res) => {
         // compare passwords using argon2id
         const same = argon2.verifySync(user.password, password);
         if(same) {
-            // Generate a simple token (in production, use JWT)
-            const token = 'simple_token_' + user.user_id + '_' + Date.now();
-            
             return res.json({
-                token: token,
                 user: {
                     user_id: user.user_id,
                     username: user.username,

@@ -427,20 +427,40 @@ class _AddAssetPageState extends State<AddAssetPage> {
                           decoration: BoxDecoration(
                             color: const Color(0xFF223A5E),
                             borderRadius: BorderRadius.circular(12),
-                            image: _currentImageUrl.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(_currentImageUrl),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
                           ),
-                          child: _currentImageUrl.isEmpty
-                              ? const Icon(
+                          child: _currentImageUrl.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Image.network(
+                                    _currentImageUrl,
+                                    width: 150,
+                                    height: 150,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.broken_image,
+                                        size: 60,
+                                        color: Colors.white54,
+                                      );
+                                    },
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value: loadingProgress.expectedTotalBytes != null
+                                              ? loadingProgress.cumulativeBytesLoaded /
+                                                  loadingProgress.expectedTotalBytes!
+                                              : null,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                              : const Icon(
                                   Icons.image,
                                   size: 60,
                                   color: Colors.white54,
-                                )
-                              : null,
+                                ),
                         ),
                       ),
                       const SizedBox(height: 20),

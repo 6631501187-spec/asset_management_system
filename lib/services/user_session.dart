@@ -1,11 +1,9 @@
 class UserSession {
   static Map<String, dynamic>? _currentUser;
-  static String? _token;
 
   // Set current user after login
-  static void setCurrentUser(Map<String, dynamic> user, String token) {
+  static void setCurrentUser(Map<String, dynamic> user) {
     _currentUser = user;
-    _token = token;
   }
 
   // Get current user
@@ -28,19 +26,13 @@ class UserSession {
     return _currentUser?['profile_image'];
   }
 
-  // Get current token
-  static String? getToken() {
-    return _token;
-  }
-
   // Check if user is logged in
   static bool isLoggedIn() {
-    return _currentUser != null && _token != null;
+    return _currentUser != null;
   }
 
   // Clear session (logout)
   static void clearSession() {
     _currentUser = null;
-    _token = null;
   }
 }
